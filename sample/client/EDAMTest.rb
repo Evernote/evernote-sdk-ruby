@@ -15,6 +15,7 @@ require "digest/md5"
 # directory of the Evernote API SDK.
 dir = File.expand_path(File.dirname(__FILE__))
 $LOAD_PATH.push("#{dir}/../../lib")
+$LOAD_PATH.push("#{dir}/../../lib/thrift")
 $LOAD_PATH.push("#{dir}/../../lib/Evernote/EDAM")
 
 require "thrift/types"
