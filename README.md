@@ -1,6 +1,7 @@
 Evernote SDK for Ruby
 =====================
-Evernote API version 1.21
+
+Evernote API version 1.22
 
 Overview
 --------
