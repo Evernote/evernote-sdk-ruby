@@ -1346,6 +1346,24 @@ require 'note_store_types'
                         raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'authenticateToSharedNote failed: unknown result')
                       end
 
+                      def findRelated(authenticationToken, query, resultSpec)
+                        send_findRelated(authenticationToken, query, resultSpec)
+                        return recv_findRelated()
+                      end
+
+                      def send_findRelated(authenticationToken, query, resultSpec)
+                        send_message('findRelated', FindRelated_args, :authenticationToken => authenticationToken, :query => query, :resultSpec => resultSpec)
+                      end
+
+                      def recv_findRelated()
+                        result = receive_message(FindRelated_result)
+                        return result.success unless result.success.nil?
+                        raise result.userException unless result.userException.nil?
+                        raise result.systemException unless result.systemException.nil?
+                        raise result.notFoundException unless result.notFoundException.nil?
+                        raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'findRelated failed: unknown result')
+                      end
+
                     end
 
                     class Processor
@@ -2444,6 +2462,21 @@ require 'note_store_types'
                           result.systemException = systemException
                         end
                         write_result(result, oprot, 'authenticateToSharedNote', seqid)
+                      end
+
+                      def process_findRelated(seqid, iprot, oprot)
+                        args = read_args(iprot, FindRelated_args)
+                        result = FindRelated_result.new()
+                        begin
+                          result.success = @handler.findRelated(args.authenticationToken, args.query, args.resultSpec)
+                        rescue Evernote::EDAM::Error::EDAMUserException => userException
+                          result.userException = userException
+                        rescue Evernote::EDAM::Error::EDAMSystemException => systemException
+                          result.systemException = systemException
+                        rescue Evernote::EDAM::Error::EDAMNotFoundException => notFoundException
+                          result.notFoundException = notFoundException
+                        end
+                        write_result(result, oprot, 'findRelated', seqid)
                       end
 
                     end
@@ -5470,6 +5503,48 @@ require 'note_store_types'
                         USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => Evernote::EDAM::Error::EDAMUserException},
                         NOTFOUNDEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'notFoundException', :class => Evernote::EDAM::Error::EDAMNotFoundException},
                         SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => Evernote::EDAM::Error::EDAMSystemException}
+                      }
+
+                      def struct_fields; FIELDS; end
+
+                      def validate
+                      end
+
+                      ::Thrift::Struct.generate_accessors self
+                    end
+
+                    class FindRelated_args
+                      include ::Thrift::Struct, ::Thrift::Struct_Union
+                      AUTHENTICATIONTOKEN = 1
+                      QUERY = 2
+                      RESULTSPEC = 3
+
+                      FIELDS = {
+                        AUTHENTICATIONTOKEN => {:type => ::Thrift::Types::STRING, :name => 'authenticationToken'},
+                        QUERY => {:type => ::Thrift::Types::STRUCT, :name => 'query', :class => Evernote::EDAM::NoteStore::RelatedQuery},
+                        RESULTSPEC => {:type => ::Thrift::Types::STRUCT, :name => 'resultSpec', :class => Evernote::EDAM::NoteStore::RelatedResultSpec}
+                      }
+
+                      def struct_fields; FIELDS; end
+
+                      def validate
+                      end
+
+                      ::Thrift::Struct.generate_accessors self
+                    end
+
+                    class FindRelated_result
+                      include ::Thrift::Struct, ::Thrift::Struct_Union
+                      SUCCESS = 0
+                      USEREXCEPTION = 1
+                      SYSTEMEXCEPTION = 2
+                      NOTFOUNDEXCEPTION = 3
+
+                      FIELDS = {
+                        SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => Evernote::EDAM::NoteStore::RelatedResult},
+                        USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => Evernote::EDAM::Error::EDAMUserException},
+                        SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => Evernote::EDAM::Error::EDAMSystemException},
+                        NOTFOUNDEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'notFoundException', :class => Evernote::EDAM::Error::EDAMNotFoundException}
                       }
 
                       def struct_fields; FIELDS; end

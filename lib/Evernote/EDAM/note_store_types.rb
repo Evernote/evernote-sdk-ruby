@@ -1007,6 +1007,121 @@ module Evernote
               ::Thrift::Struct.generate_accessors self
             end
 
+            # A description of the thing for which we are searching for related
+            # entities.  You must choose exactly one field.
+            # 
+            # <dl>
+            # <dt>noteGuid</dt>
+            # <dd>The GUID of an existing note in your account for which related
+            #     entities will be found.</dd>
+            # 
+            # <dt>plainText</dt>
+            # <dd>A string of plain text for which to find related entities.
+            #     You should provide a text block with a number of characters between
+            #     EDAM_RELATED_PLAINTEXT_LEN_MIN and EDAM_RELATED_PLAINTEXT_LEN_MAX.
+            #     </dd>
+            # </dl>
+            class RelatedQuery
+              include ::Thrift::Struct, ::Thrift::Struct_Union
+              NOTEGUID = 1
+              PLAINTEXT = 2
+
+              FIELDS = {
+                NOTEGUID => {:type => ::Thrift::Types::STRING, :name => 'noteGuid', :optional => true},
+                PLAINTEXT => {:type => ::Thrift::Types::STRING, :name => 'plainText', :optional => true}
+              }
+
+              def struct_fields; FIELDS; end
+
+              def validate
+              end
+
+              ::Thrift::Struct.generate_accessors self
+            end
+
+            # The result of calling findRelated().  The contents of the notes,
+            # notebooks, and tags fields will be in decreasing order of expected
+            # relevance.  It is possible that fewer results than requested will be
+            # returned even if there are enough distinct entities in the account
+            # in cases where the relevance is estimated to be low.
+            # 
+            # <dl>
+            # <dt>notes</dt>
+            # <dd>If notes have been requested to be included, this will be the
+            #     list of notes.</dd>
+            # 
+            # <dt>notebooks</dt>
+            # <dd>If notebooks have been requested to be included, this will be the
+            #     list of notebooks.</dd>
+            # 
+            # <dt>tags</dt>
+            # <dd>If tags have been requested to be included, this will be the list
+            #     of tags.</dd>
+            # </dl>
+            class RelatedResult
+              include ::Thrift::Struct, ::Thrift::Struct_Union
+              NOTES = 1
+              NOTEBOOKS = 2
+              TAGS = 3
+
+              FIELDS = {
+                NOTES => {:type => ::Thrift::Types::LIST, :name => 'notes', :element => {:type => ::Thrift::Types::STRUCT, :class => Evernote::EDAM::Type::Note}, :optional => true},
+                NOTEBOOKS => {:type => ::Thrift::Types::LIST, :name => 'notebooks', :element => {:type => ::Thrift::Types::STRUCT, :class => Evernote::EDAM::Type::Notebook}, :optional => true},
+                TAGS => {:type => ::Thrift::Types::LIST, :name => 'tags', :element => {:type => ::Thrift::Types::STRUCT, :class => Evernote::EDAM::Type::Tag}, :optional => true}
+              }
+
+              def struct_fields; FIELDS; end
+
+              def validate
+              end
+
+              ::Thrift::Struct.generate_accessors self
+            end
+
+            # A description of the thing for which the service will find related
+            # entities, via findRelated(), together with a description of what
+            # type of entities and how many you are seeking in the
+            # RelatednessResult.
+            # 
+            # <dl>
+            # <dt>maxNotes</dt>
+            # <dd>Return notes that are related to the query, but no more than
+            #     this many.  Any value greater than EDAM_RELATED_MAX_NOTES
+            #     will be silently capped.  If you do not set this field, then
+            #     no notes will be returned.</dd>
+            # 
+            # <dt>maxNotebooks</dt>
+            # <dd>Return notebooks that are related to the query, but no more than
+            #     this many.  Any value greater than EDAM_RELATED_MAX_NOTEBOOKS
+            #     will be silently capped.  If you do not set this field, then
+            #     no notebooks will be returned.</dd>
+            # 
+            # <dt>maxTags</dt>
+            # <dd>Return tags that are related to the query, but no more than
+            #     this many.  Any value greater than EDAM_RELATED_MAX_TAGS
+            #     will be silently capped.  If you do not set this field, then
+            #     no tags will be returned.</dd>
+            # </dl>
+            class RelatedResultSpec
+              include ::Thrift::Struct, ::Thrift::Struct_Union
+              MAXNOTES = 1
+              MAXNOTEBOOKS = 2
+              MAXTAGS = 3
+
+              FIELDS = {
+                MAXNOTES => {:type => ::Thrift::Types::I32, :name => 'maxNotes', :optional => true},
+                MAXNOTEBOOKS => {:type => ::Thrift::Types::I32, :name => 'maxNotebooks', :optional => true},
+                MAXTAGS => {:type => ::Thrift::Types::I32, :name => 'maxTags', :optional => true}
+              }
+
+              def struct_fields; FIELDS; end
+
+              def validate
+              end
+
+              ::Thrift::Struct.generate_accessors self
+            end
+
           end
         end
       end

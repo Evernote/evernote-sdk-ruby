@@ -326,6 +326,7 @@ module Evernote
               ENABLESINGLENOTESHARING = 9
               ENABLESPONSOREDACCOUNTS = 10
               ENABLETWITTERSHARING = 11
+              ENABLELINKEDINSHARING = 12
 
               FIELDS = {
                 SERVICEHOST => {:type => ::Thrift::Types::STRING, :name => 'serviceHost'},
@@ -338,7 +339,8 @@ module Evernote
                 ENABLESHAREDNOTEBOOKS => {:type => ::Thrift::Types::BOOL, :name => 'enableSharedNotebooks', :optional => true},
                 ENABLESINGLENOTESHARING => {:type => ::Thrift::Types::BOOL, :name => 'enableSingleNoteSharing', :optional => true},
                 ENABLESPONSOREDACCOUNTS => {:type => ::Thrift::Types::BOOL, :name => 'enableSponsoredAccounts', :optional => true},
-                ENABLETWITTERSHARING => {:type => ::Thrift::Types::BOOL, :name => 'enableTwitterSharing', :optional => true}
+                ENABLETWITTERSHARING => {:type => ::Thrift::Types::BOOL, :name => 'enableTwitterSharing', :optional => true},
+                ENABLELINKEDINSHARING => {:type => ::Thrift::Types::BOOL, :name => 'enableLinkedInSharing', :optional => true}
               }
 
               def struct_fields; FIELDS; end
