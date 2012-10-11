@@ -2,11 +2,11 @@
 # evernote_oauth_simple.rb
 # Copyright 2010 Evernote Corporation. All rights reserved.
 #
-# This sample web application demonstrates the process of using OAuth to 
-# authenticate to the Evernote web service. More information can be found in the 
+# This sample web application demonstrates the process of using OAuth to
+# authenticate to the Evernote web service. More information can be found in the
 # Evernote API Overview at http://www.evernote.com/about/developer/api/evernote-api.htm.
 #
-# Note that we're not attempting to demonstrate Ruby/Sinatra best practices or 
+# Note that we're not attempting to demonstrate Ruby/Sinatra best practices or
 # build a scalable multi-user web application, we're simply giving you an idea
 # of how the OAuth workflow works with Evernote.
 #
@@ -26,6 +26,7 @@
 # Requires the Sinatra framework and the OAuth RubyGem. You can install these
 # components as follows:
 #
+#   gem install evernote-thrift
 #   gem install sinatra
 #   gem install oauth
 #
@@ -48,7 +49,7 @@ require "evernote_config.rb"
 # Verify that you have obtained an Evernote API key
 ##
 before do
-  if (OAUTH_CONSUMER_KEY.empty? || OAUTH_CONSUMER_SECRET.empty?) 
+  if OAUTH_CONSUMER_KEY.empty? || OAUTH_CONSUMER_SECRET.empty?
     halt '<span style="color:red">Before using this sample code you must edit evernote_config.rb and replace OAUTH_CONSUMER_KEY and OAUTH_CONSUMER_SECRET with the values that you received from Evernote. If you do not have an API key, you can request one from <a href="http://dev.evernote.com/documentation/cloud/">dev.evernote.com/documentation/cloud/</a>.</span>'
   end
 end
@@ -64,7 +65,7 @@ end
 # Reset the session
 ##
 get '/reset' do
-  session[:request_token] = nil
+  session.clear
   erb :authorize
 end
 
@@ -76,13 +77,13 @@ get '/authorize' do
 
   begin
     consumer = OAuth::Consumer.new(OAUTH_CONSUMER_KEY, OAUTH_CONSUMER_SECRET,{
-        :site => EVERNOTE_SERVER,
-        :request_token_path => "/oauth",
-        :access_token_path => "/oauth",
-        :authorize_path => "/OAuth.action"})
-    session[:request_token] = consumer.get_request_token(:oauth_callback => callback_url)
-    redirect session[:request_token].authorize_url
-  rescue Exception => e
+      :site => EVERNOTE_SERVER,
+      :request_token_path => "/oauth",
+      :access_token_path => "/oauth",
+      :authorize_path => "/OAuth.action"})
+      session[:request_token] = consumer.get_request_token(:oauth_callback => callback_url)
+      redirect session[:request_token].authorize_url
+  rescue => e
     @last_error = "Error obtaining temporary credentials: #{e.message}"
     erb :error
   end
@@ -93,10 +94,7 @@ end
 # temporary credentials for an token credentials.
 ##
 get '/callback' do
-  if (params['oauth_verifier'].nil?)
-    @last_error = "Content owner did not authorize the temporary credentials"
-    erb :error
-  else
+  if params['oauth_verifier']
     oauth_verifier = params['oauth_verifier']
 
     begin
@@ -108,16 +106,15 @@ get '/callback' do
 
       # Build an array of notebook names from the array of Notebook objects
       notebooks = noteStore.listNotebooks(access_token.token)
-      result = Array.new
-      notebooks.each do |notebook| 
-        result << notebook.name
-      end
-      @notebooks = result
+      @notebooks = notebooks.map(&:name)
       erb :complete
-    rescue Exception => e
+    rescue => e
       @last_error = e.message
       erb :error
     end
+  else
+    @last_error = "Content owner did not authorize the temporary credentials"
+    erb :error
   end
 end
 
@@ -159,28 +156,28 @@ __END__
 
 
 @@ error
-    <p>
-      <span style="color:red">An error occurred: <%= @last_error %></span>
-    </p>
+<p>
+  <span style="color:red">An error occurred: <%= @last_error %></span>
+</p>
 
 @@ authorize
-    <p>
-      <a href="/authorize">Click here</a> to authorize this application to access your Evernote account. You will be directed to evernote.com to authorize access, then returned to this application after authorization is complete.
-    </p>
+<p>
+  <a href="/authorize">Click here</a> to authorize this application to access your Evernote account. You will be directed to evernote.com to authorize access, then returned to this application after authorization is complete.
+</p>
 
 
 @@ complete
-    <p style="color:green">
-      Congratulations, you have successfully authorized this application to access your Evernote account!
-    </p>
+<p style="color:green">
+  Congratulations, you have successfully authorized this application to access your Evernote account!
+</p>
 
-    <p>
-      You account contains the following notebooks:
-    </p>
+<p>
+  You account contains the following notebooks:
+</p>
 
-    <ul>
-<% @notebooks.each do |notebook| %>
-      <li><%= notebook %></li>
-<% end %>
-    </ul>
+<ul>
+  <% @notebooks.each do |notebook| %>
+    <li><%= notebook %></li>
+  <% end %>
+</ul>
 

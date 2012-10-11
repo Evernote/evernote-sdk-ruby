@@ -2,20 +2,8 @@
 require 'oauth'
 require 'oauth/consumer'
 
-# Add the Thrift & Evernote Ruby libraries to the load path.
-# This will only work if you run this application from the /ruby/sample/oauth
-# directory of the Evernote API SDK.
-dir = File.expand_path(File.dirname(__FILE__))
-$LOAD_PATH.push("#{dir}/../../lib")
-$LOAD_PATH.push("#{dir}/../../lib/Evernote/EDAM")
-
-require "thrift/types"
-require "thrift/struct"
-require "thrift/protocol/base_protocol"
-require "thrift/protocol/binary_protocol"
-require "thrift/transport/base_transport"
-require "thrift/transport/http_client_transport"
-require "Evernote/EDAM/note_store"
+# Load Thrift & Evernote Ruby libraries
+require "evernote-thrift"
 
 # Client credentials
 # Fill these in with the consumer key and consumer secret that you obtained
