@@ -9,6 +9,10 @@ This SDK contains wrapper code used to call the Evernote Cloud API from Ruby.
 
 The SDK also contains two samples. The code in sample/client demonstrates the basic use of the SDK for single-user scripts. The code in sample/oauth demonstrates the basic use of the SDK for web applications that authenticate using OAuth.
 
+Install the gem
+---------------
+gem install evernote-thrift
+
 Prerequisites
 -------------
 In order to use the code in this SDK, you need to obtain an API key from http://dev.evernote.com/documentation/cloud. You'll also find full API documentation on that page.
