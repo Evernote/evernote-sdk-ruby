@@ -46,3 +46,10 @@ There are two pages in the sample. evernote_oauth.rb demonstrates each step of t
     ruby -rubygems evernote_oauth.rb
 6. Open the sample app in your browser: http://localhost:4567
 7. Repeat steps 5 and 6 with the file evernote_oauth_simple.rb to run the simple sample app.
+
+Getting Started - evernote_oauth gem
+------------------------------------
+We also provide a high level wrapper for the Thrift API client.  You can install it with:
+gem install evernote_oauth
+
+For more detail, see: https://github.com/evernote/evernote-oauth-ruby
