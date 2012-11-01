@@ -54,3 +54,18 @@ require 'thrift/transport/http_client_transport'
 require 'thrift/transport/io_stream_transport'
 require 'thrift/transport/memory_buffer_transport'
 
+# user-agent for rubygem
+module Thrift
+  class HTTPClientTransport < BaseTransport
+    private
+    alias_method :original_default_headers, :default_headers
+    def default_headers
+      gem_version = Gem.loaded_specs['evernote-thrift'].version.to_s
+      {'Content-Type' => 'application/x-thrift',
+        'User-Agent' => "evernote-thrift gem / #{gem_version}; Ruby / #{RUBY_VERSION};"}
+    rescue
+      original_default_headers
+    end
+  end
+end
+
