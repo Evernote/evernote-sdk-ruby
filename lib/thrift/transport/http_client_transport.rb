@@ -28,7 +28,7 @@ module Thrift
 
     def initialize(url, proxy_addr = nil, proxy_port = nil)
       @url = URI url
-      @headers = {'Content-Type' => 'application/x-thrift'}
+      @headers = default_headers
       @outbuf = ""
       @proxy_addr = proxy_addr
       @proxy_port = proxy_port
@@ -49,5 +49,13 @@ module Thrift
       @inbuf = StringIO.new resp.body
       @outbuf = ""
     end
+
+    private
+    def default_headers
+      sdk_version = "#{Evernote::EDAM::UserStore::EDAM_VERSION_MAJOR}.#{Evernote::EDAM::UserStore::EDAM_VERSION_MINOR}" rescue 'NA'
+      {'Content-Type' => 'application/x-thrift',
+        'User-Agent' => "Evernote SDK Ruby / #{sdk_version}; Ruby / #{RUBY_VERSION};"}
+    end
+
   end
 end
