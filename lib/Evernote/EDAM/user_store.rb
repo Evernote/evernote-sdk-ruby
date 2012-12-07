@@ -61,6 +61,40 @@ require 'user_store_types'
                         raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'authenticate failed: unknown result')
                       end
 
+                      def authenticateLongSession(username, password, consumerKey, consumerSecret, deviceIdentifier, deviceDescription)
+                        send_authenticateLongSession(username, password, consumerKey, consumerSecret, deviceIdentifier, deviceDescription)
+                        return recv_authenticateLongSession()
+                      end
+
+                      def send_authenticateLongSession(username, password, consumerKey, consumerSecret, deviceIdentifier, deviceDescription)
+                        send_message('authenticateLongSession', AuthenticateLongSession_args, :username => username, :password => password, :consumerKey => consumerKey, :consumerSecret => consumerSecret, :deviceIdentifier => deviceIdentifier, :deviceDescription => deviceDescription)
+                      end
+
+                      def recv_authenticateLongSession()
+                        result = receive_message(AuthenticateLongSession_result)
+                        return result.success unless result.success.nil?
+                        raise result.userException unless result.userException.nil?
+                        raise result.systemException unless result.systemException.nil?
+                        raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'authenticateLongSession failed: unknown result')
+                      end
+
+                      def authenticateToBusiness(authenticationToken)
+                        send_authenticateToBusiness(authenticationToken)
+                        return recv_authenticateToBusiness()
+                      end
+
+                      def send_authenticateToBusiness(authenticationToken)
+                        send_message('authenticateToBusiness', AuthenticateToBusiness_args, :authenticationToken => authenticationToken)
+                      end
+
+                      def recv_authenticateToBusiness()
+                        result = receive_message(AuthenticateToBusiness_result)
+                        return result.success unless result.success.nil?
+                        raise result.userException unless result.userException.nil?
+                        raise result.systemException unless result.systemException.nil?
+                        raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'authenticateToBusiness failed: unknown result')
+                      end
+
                       def refreshAuthentication(authenticationToken)
                         send_refreshAuthentication(authenticationToken)
                         return recv_refreshAuthentication()
@@ -179,6 +213,32 @@ require 'user_store_types'
                         write_result(result, oprot, 'authenticate', seqid)
                       end
 
+                      def process_authenticateLongSession(seqid, iprot, oprot)
+                        args = read_args(iprot, AuthenticateLongSession_args)
+                        result = AuthenticateLongSession_result.new()
+                        begin
+                          result.success = @handler.authenticateLongSession(args.username, args.password, args.consumerKey, args.consumerSecret, args.deviceIdentifier, args.deviceDescription)
+                        rescue Evernote::EDAM::Error::EDAMUserException => userException
+                          result.userException = userException
+                        rescue Evernote::EDAM::Error::EDAMSystemException => systemException
+                          result.systemException = systemException
+                        end
+                        write_result(result, oprot, 'authenticateLongSession', seqid)
+                      end
+
+                      def process_authenticateToBusiness(seqid, iprot, oprot)
+                        args = read_args(iprot, AuthenticateToBusiness_args)
+                        result = AuthenticateToBusiness_result.new()
+                        begin
+                          result.success = @handler.authenticateToBusiness(args.authenticationToken)
+                        rescue Evernote::EDAM::Error::EDAMUserException => userException
+                          result.userException = userException
+                        rescue Evernote::EDAM::Error::EDAMSystemException => systemException
+                          result.systemException = systemException
+                        end
+                        write_result(result, oprot, 'authenticateToBusiness', seqid)
+                      end
+
                       def process_refreshAuthentication(seqid, iprot, oprot)
                         args = read_args(iprot, RefreshAuthentication_args)
                         result = RefreshAuthentication_result.new()
@@ -259,7 +319,7 @@ require 'user_store_types'
                       FIELDS = {
                         CLIENTNAME => {:type => ::Thrift::Types::STRING, :name => 'clientName'},
                         EDAMVERSIONMAJOR => {:type => ::Thrift::Types::I16, :name => 'edamVersionMajor', :default => 1},
-                        EDAMVERSIONMINOR => {:type => ::Thrift::Types::I16, :name => 'edamVersionMinor', :default => 22}
+                        EDAMVERSIONMINOR => {:type => ::Thrift::Types::I16, :name => 'edamVersionMinor', :default => 23}
                       }
 
                       def struct_fields; FIELDS; end
@@ -341,6 +401,88 @@ require 'user_store_types'
                     end
 
                     class Authenticate_result
+                      include ::Thrift::Struct, ::Thrift::Struct_Union
+                      SUCCESS = 0
+                      USEREXCEPTION = 1
+                      SYSTEMEXCEPTION = 2
+
+                      FIELDS = {
+                        SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => Evernote::EDAM::UserStore::AuthenticationResult},
+                        USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => Evernote::EDAM::Error::EDAMUserException},
+                        SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => Evernote::EDAM::Error::EDAMSystemException}
+                      }
+
+                      def struct_fields; FIELDS; end
+
+                      def validate
+                      end
+
+                      ::Thrift::Struct.generate_accessors self
+                    end
+
+                    class AuthenticateLongSession_args
+                      include ::Thrift::Struct, ::Thrift::Struct_Union
+                      USERNAME = 1
+                      PASSWORD = 2
+                      CONSUMERKEY = 3
+                      CONSUMERSECRET = 4
+                      DEVICEIDENTIFIER = 5
+                      DEVICEDESCRIPTION = 6
+
+                      FIELDS = {
+                        USERNAME => {:type => ::Thrift::Types::STRING, :name => 'username'},
+                        PASSWORD => {:type => ::Thrift::Types::STRING, :name => 'password'},
+                        CONSUMERKEY => {:type => ::Thrift::Types::STRING, :name => 'consumerKey'},
+                        CONSUMERSECRET => {:type => ::Thrift::Types::STRING, :name => 'consumerSecret'},
+                        DEVICEIDENTIFIER => {:type => ::Thrift::Types::STRING, :name => 'deviceIdentifier'},
+                        DEVICEDESCRIPTION => {:type => ::Thrift::Types::STRING, :name => 'deviceDescription'}
+                      }
+
+                      def struct_fields; FIELDS; end
+
+                      def validate
+                      end
+
+                      ::Thrift::Struct.generate_accessors self
+                    end
+
+                    class AuthenticateLongSession_result
+                      include ::Thrift::Struct, ::Thrift::Struct_Union
+                      SUCCESS = 0
+                      USEREXCEPTION = 1
+                      SYSTEMEXCEPTION = 2
+
+                      FIELDS = {
+                        SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => Evernote::EDAM::UserStore::AuthenticationResult},
+                        USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => Evernote::EDAM::Error::EDAMUserException},
+                        SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => Evernote::EDAM::Error::EDAMSystemException}
+                      }
+
+                      def struct_fields; FIELDS; end
+
+                      def validate
+                      end
+
+                      ::Thrift::Struct.generate_accessors self
+                    end
+
+                    class AuthenticateToBusiness_args
+                      include ::Thrift::Struct, ::Thrift::Struct_Union
+                      AUTHENTICATIONTOKEN = 1
+
+                      FIELDS = {
+                        AUTHENTICATIONTOKEN => {:type => ::Thrift::Types::STRING, :name => 'authenticationToken'}
+                      }
+
+                      def struct_fields; FIELDS; end
+
+                      def validate
+                      end
+
+                      ::Thrift::Struct.generate_accessors self
+                    end
+
+                    class AuthenticateToBusiness_result
                       include ::Thrift::Struct, ::Thrift::Struct_Union
                       SUCCESS = 0
                       USEREXCEPTION = 1
@@ -493,7 +635,7 @@ require 'user_store_types'
                       SYSTEMEXCEPTION = 2
 
                       FIELDS = {
-                        SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => Evernote::EDAM::UserStore::PremiumInfo},
+                        SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => Evernote::EDAM::Type::PremiumInfo},
                         USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => Evernote::EDAM::Error::EDAMUserException},
                         SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => Evernote::EDAM::Error::EDAMSystemException}
                       }

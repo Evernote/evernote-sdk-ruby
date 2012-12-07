@@ -1028,57 +1028,6 @@ require 'note_store_types'
                         raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getResourceAttributes failed: unknown result')
                       end
 
-                      def getAccountSize(authenticationToken)
-                        send_getAccountSize(authenticationToken)
-                        return recv_getAccountSize()
-                      end
-
-                      def send_getAccountSize(authenticationToken)
-                        send_message('getAccountSize', GetAccountSize_args, :authenticationToken => authenticationToken)
-                      end
-
-                      def recv_getAccountSize()
-                        result = receive_message(GetAccountSize_result)
-                        return result.success unless result.success.nil?
-                        raise result.userException unless result.userException.nil?
-                        raise result.systemException unless result.systemException.nil?
-                        raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getAccountSize failed: unknown result')
-                      end
-
-                      def getAds(authenticationToken, adParameters)
-                        send_getAds(authenticationToken, adParameters)
-                        return recv_getAds()
-                      end
-
-                      def send_getAds(authenticationToken, adParameters)
-                        send_message('getAds', GetAds_args, :authenticationToken => authenticationToken, :adParameters => adParameters)
-                      end
-
-                      def recv_getAds()
-                        result = receive_message(GetAds_result)
-                        return result.success unless result.success.nil?
-                        raise result.userException unless result.userException.nil?
-                        raise result.systemException unless result.systemException.nil?
-                        raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getAds failed: unknown result')
-                      end
-
-                      def getRandomAd(authenticationToken, adParameters)
-                        send_getRandomAd(authenticationToken, adParameters)
-                        return recv_getRandomAd()
-                      end
-
-                      def send_getRandomAd(authenticationToken, adParameters)
-                        send_message('getRandomAd', GetRandomAd_args, :authenticationToken => authenticationToken, :adParameters => adParameters)
-                      end
-
-                      def recv_getRandomAd()
-                        result = receive_message(GetRandomAd_result)
-                        return result.success unless result.success.nil?
-                        raise result.userException unless result.userException.nil?
-                        raise result.systemException unless result.systemException.nil?
-                        raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getRandomAd failed: unknown result')
-                      end
-
                       def getPublicNotebook(userId, publicUri)
                         send_getPublicNotebook(userId, publicUri)
                         return recv_getPublicNotebook()
@@ -1112,6 +1061,24 @@ require 'note_store_types'
                         raise result.notFoundException unless result.notFoundException.nil?
                         raise result.systemException unless result.systemException.nil?
                         raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'createSharedNotebook failed: unknown result')
+                      end
+
+                      def updateSharedNotebook(authenticationToken, sharedNotebook)
+                        send_updateSharedNotebook(authenticationToken, sharedNotebook)
+                        return recv_updateSharedNotebook()
+                      end
+
+                      def send_updateSharedNotebook(authenticationToken, sharedNotebook)
+                        send_message('updateSharedNotebook', UpdateSharedNotebook_args, :authenticationToken => authenticationToken, :sharedNotebook => sharedNotebook)
+                      end
+
+                      def recv_updateSharedNotebook()
+                        result = receive_message(UpdateSharedNotebook_result)
+                        return result.success unless result.success.nil?
+                        raise result.userException unless result.userException.nil?
+                        raise result.notFoundException unless result.notFoundException.nil?
+                        raise result.systemException unless result.systemException.nil?
+                        raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'updateSharedNotebook failed: unknown result')
                       end
 
                       def sendMessageToSharedNotebookMembers(authenticationToken, notebookGuid, messageText, recipients)
@@ -2202,45 +2169,6 @@ require 'note_store_types'
                         write_result(result, oprot, 'getResourceAttributes', seqid)
                       end
 
-                      def process_getAccountSize(seqid, iprot, oprot)
-                        args = read_args(iprot, GetAccountSize_args)
-                        result = GetAccountSize_result.new()
-                        begin
-                          result.success = @handler.getAccountSize(args.authenticationToken)
-                        rescue Evernote::EDAM::Error::EDAMUserException => userException
-                          result.userException = userException
-                        rescue Evernote::EDAM::Error::EDAMSystemException => systemException
-                          result.systemException = systemException
-                        end
-                        write_result(result, oprot, 'getAccountSize', seqid)
-                      end
-
-                      def process_getAds(seqid, iprot, oprot)
-                        args = read_args(iprot, GetAds_args)
-                        result = GetAds_result.new()
-                        begin
-                          result.success = @handler.getAds(args.authenticationToken, args.adParameters)
-                        rescue Evernote::EDAM::Error::EDAMUserException => userException
-                          result.userException = userException
-                        rescue Evernote::EDAM::Error::EDAMSystemException => systemException
-                          result.systemException = systemException
-                        end
-                        write_result(result, oprot, 'getAds', seqid)
-                      end
-
-                      def process_getRandomAd(seqid, iprot, oprot)
-                        args = read_args(iprot, GetRandomAd_args)
-                        result = GetRandomAd_result.new()
-                        begin
-                          result.success = @handler.getRandomAd(args.authenticationToken, args.adParameters)
-                        rescue Evernote::EDAM::Error::EDAMUserException => userException
-                          result.userException = userException
-                        rescue Evernote::EDAM::Error::EDAMSystemException => systemException
-                          result.systemException = systemException
-                        end
-                        write_result(result, oprot, 'getRandomAd', seqid)
-                      end
-
                       def process_getPublicNotebook(seqid, iprot, oprot)
                         args = read_args(iprot, GetPublicNotebook_args)
                         result = GetPublicNotebook_result.new()
@@ -2267,6 +2195,21 @@ require 'note_store_types'
                           result.systemException = systemException
                         end
                         write_result(result, oprot, 'createSharedNotebook', seqid)
+                      end
+
+                      def process_updateSharedNotebook(seqid, iprot, oprot)
+                        args = read_args(iprot, UpdateSharedNotebook_args)
+                        result = UpdateSharedNotebook_result.new()
+                        begin
+                          result.success = @handler.updateSharedNotebook(args.authenticationToken, args.sharedNotebook)
+                        rescue Evernote::EDAM::Error::EDAMUserException => userException
+                          result.userException = userException
+                        rescue Evernote::EDAM::Error::EDAMNotFoundException => notFoundException
+                          result.notFoundException = notFoundException
+                        rescue Evernote::EDAM::Error::EDAMSystemException => systemException
+                          result.systemException = systemException
+                        end
+                        write_result(result, oprot, 'updateSharedNotebook', seqid)
                       end
 
                       def process_sendMessageToSharedNotebookMembers(seqid, iprot, oprot)
@@ -4809,118 +4752,6 @@ require 'note_store_types'
                       ::Thrift::Struct.generate_accessors self
                     end
 
-                    class GetAccountSize_args
-                      include ::Thrift::Struct, ::Thrift::Struct_Union
-                      AUTHENTICATIONTOKEN = 1
-
-                      FIELDS = {
-                        AUTHENTICATIONTOKEN => {:type => ::Thrift::Types::STRING, :name => 'authenticationToken'}
-                      }
-
-                      def struct_fields; FIELDS; end
-
-                      def validate
-                      end
-
-                      ::Thrift::Struct.generate_accessors self
-                    end
-
-                    class GetAccountSize_result
-                      include ::Thrift::Struct, ::Thrift::Struct_Union
-                      SUCCESS = 0
-                      USEREXCEPTION = 1
-                      SYSTEMEXCEPTION = 2
-
-                      FIELDS = {
-                        SUCCESS => {:type => ::Thrift::Types::I64, :name => 'success'},
-                        USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => Evernote::EDAM::Error::EDAMUserException},
-                        SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => Evernote::EDAM::Error::EDAMSystemException}
-                      }
-
-                      def struct_fields; FIELDS; end
-
-                      def validate
-                      end
-
-                      ::Thrift::Struct.generate_accessors self
-                    end
-
-                    class GetAds_args
-                      include ::Thrift::Struct, ::Thrift::Struct_Union
-                      AUTHENTICATIONTOKEN = 1
-                      ADPARAMETERS = 2
-
-                      FIELDS = {
-                        AUTHENTICATIONTOKEN => {:type => ::Thrift::Types::STRING, :name => 'authenticationToken'},
-                        ADPARAMETERS => {:type => ::Thrift::Types::STRUCT, :name => 'adParameters', :class => Evernote::EDAM::NoteStore::AdParameters}
-                      }
-
-                      def struct_fields; FIELDS; end
-
-                      def validate
-                      end
-
-                      ::Thrift::Struct.generate_accessors self
-                    end
-
-                    class GetAds_result
-                      include ::Thrift::Struct, ::Thrift::Struct_Union
-                      SUCCESS = 0
-                      USEREXCEPTION = 1
-                      SYSTEMEXCEPTION = 2
-
-                      FIELDS = {
-                        SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => Evernote::EDAM::Type::Ad}},
-                        USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => Evernote::EDAM::Error::EDAMUserException},
-                        SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => Evernote::EDAM::Error::EDAMSystemException}
-                      }
-
-                      def struct_fields; FIELDS; end
-
-                      def validate
-                      end
-
-                      ::Thrift::Struct.generate_accessors self
-                    end
-
-                    class GetRandomAd_args
-                      include ::Thrift::Struct, ::Thrift::Struct_Union
-                      AUTHENTICATIONTOKEN = 1
-                      ADPARAMETERS = 2
-
-                      FIELDS = {
-                        AUTHENTICATIONTOKEN => {:type => ::Thrift::Types::STRING, :name => 'authenticationToken'},
-                        ADPARAMETERS => {:type => ::Thrift::Types::STRUCT, :name => 'adParameters', :class => Evernote::EDAM::NoteStore::AdParameters}
-                      }
-
-                      def struct_fields; FIELDS; end
-
-                      def validate
-                      end
-
-                      ::Thrift::Struct.generate_accessors self
-                    end
-
-                    class GetRandomAd_result
-                      include ::Thrift::Struct, ::Thrift::Struct_Union
-                      SUCCESS = 0
-                      USEREXCEPTION = 1
-                      SYSTEMEXCEPTION = 2
-
-                      FIELDS = {
-                        SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => Evernote::EDAM::Type::Ad},
-                        USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => Evernote::EDAM::Error::EDAMUserException},
-                        SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => Evernote::EDAM::Error::EDAMSystemException}
-                      }
-
-                      def struct_fields; FIELDS; end
-
-                      def validate
-                      end
-
-                      ::Thrift::Struct.generate_accessors self
-                    end
-
                     class GetPublicNotebook_args
                       include ::Thrift::Struct, ::Thrift::Struct_Union
                       USERID = 1
@@ -4986,6 +4817,46 @@ require 'note_store_types'
 
                       FIELDS = {
                         SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => Evernote::EDAM::Type::SharedNotebook},
+                        USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => Evernote::EDAM::Error::EDAMUserException},
+                        NOTFOUNDEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'notFoundException', :class => Evernote::EDAM::Error::EDAMNotFoundException},
+                        SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => Evernote::EDAM::Error::EDAMSystemException}
+                      }
+
+                      def struct_fields; FIELDS; end
+
+                      def validate
+                      end
+
+                      ::Thrift::Struct.generate_accessors self
+                    end
+
+                    class UpdateSharedNotebook_args
+                      include ::Thrift::Struct, ::Thrift::Struct_Union
+                      AUTHENTICATIONTOKEN = 1
+                      SHAREDNOTEBOOK = 2
+
+                      FIELDS = {
+                        AUTHENTICATIONTOKEN => {:type => ::Thrift::Types::STRING, :name => 'authenticationToken'},
+                        SHAREDNOTEBOOK => {:type => ::Thrift::Types::STRUCT, :name => 'sharedNotebook', :class => Evernote::EDAM::Type::SharedNotebook}
+                      }
+
+                      def struct_fields; FIELDS; end
+
+                      def validate
+                      end
+
+                      ::Thrift::Struct.generate_accessors self
+                    end
+
+                    class UpdateSharedNotebook_result
+                      include ::Thrift::Struct, ::Thrift::Struct_Union
+                      SUCCESS = 0
+                      USEREXCEPTION = 1
+                      NOTFOUNDEXCEPTION = 2
+                      SYSTEMEXCEPTION = 3
+
+                      FIELDS = {
+                        SUCCESS => {:type => ::Thrift::Types::I32, :name => 'success'},
                         USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => Evernote::EDAM::Error::EDAMUserException},
                         NOTFOUNDEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'notFoundException', :class => Evernote::EDAM::Error::EDAMNotFoundException},
                         SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => Evernote::EDAM::Error::EDAMSystemException}

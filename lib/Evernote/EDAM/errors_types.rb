@@ -31,7 +31,7 @@ module Evernote
             end
 
             # This exception is thrown by EDAM procedures when a call fails as a result of
-            # a problem that a user may be able to resolve.  For example, if the user
+            # a problem that a caller may be able to resolve.  For example, if the user
             # attempts to add a note to their account which would exceed their storage
             # quota, this type of exception may be thrown to indicate the source of the
             # error so that they can choose an alternate action.
@@ -68,7 +68,7 @@ module Evernote
             end
 
             # This exception is thrown by EDAM procedures when a call fails as a result of
-            # an a problem in the service that could not be changed through user action.
+            # a problem in the service that could not be changed through caller action.
             # 
             # errorCode:  The numeric code indicating the type of error that occurred.
             #   must be one of the values of EDAMErrorCode.
@@ -97,14 +97,16 @@ module Evernote
             end
 
             # This exception is thrown by EDAM procedures when a caller asks to perform
-            # an operation that does not exist.  This may be thrown based on an invalid
+            # an operation on an object that does not exist.  This may be thrown based on an invalid
             # primary identifier (e.g. a bad GUID), or when the caller refers to an object
             # by another unique identifier (e.g. a User's email address).
             # 
-            # identifier:  the object identifier that was not found on the server.
+            # identifier:  A description of the object that was not found on the server.
+            #   For example, "Note.notebookGuid" when a caller attempts to create a note in a
+            #   notebook that does not exist in the user's account.
             # 
-            # key:  the value passed from the client in the identifier, which was not
-            #   found.  E.g. the GUID of an object that was not found.
+            # key:  The value passed from the client in the identifier, which was not
+            #   found. For example, the GUID that was not found.
             class EDAMNotFoundException < ::Thrift::Exception
               include ::Thrift::Struct, ::Thrift::Struct_Union
               IDENTIFIER = 1

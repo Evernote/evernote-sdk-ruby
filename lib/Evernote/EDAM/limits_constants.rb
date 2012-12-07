@@ -35,6 +35,8 @@ require 'limits_types'
 
             EDAM_EMAIL_REGEX = %q"^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(\\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*\\.([A-Za-z]{2,})$"
 
+            EDAM_VAT_REGEX = %q"[A-Za-z]{2}.+"
+
             EDAM_TIMEZONE_LEN_MIN = 1
 
             EDAM_TIMEZONE_LEN_MAX = 32
@@ -59,6 +61,10 @@ require 'limits_types'
 
             EDAM_MIME_TYPE_AMR = %q"audio/amr"
 
+            EDAM_MIME_TYPE_AAC = %q"audio/aac"
+
+            EDAM_MIME_TYPE_M4A = %q"audio/mp4"
+
             EDAM_MIME_TYPE_MP4_VIDEO = %q"video/mp4"
 
             EDAM_MIME_TYPE_INK = %q"application/vnd.evernote.ink"
@@ -77,23 +83,9 @@ require 'limits_types'
               %q"application/vnd.evernote.ink",
               %q"application/pdf",
               %q"video/mp4",
+              %q"audio/aac",
+              %q"audio/mp4",
             ])
-
-            EDAM_COMMERCE_SERVICE_GOOGLE = %q"Google"
-
-            EDAM_COMMERCE_SERVICE_PAYPAL = %q"Paypal"
-
-            EDAM_COMMERCE_SERVICE_GIFT = %q"Gift"
-
-            EDAM_COMMERCE_SERVICE_TRIALPAY = %q"TrialPay"
-
-            EDAM_COMMERCE_SERVICE_TRIAL = %q"Trial"
-
-            EDAM_COMMERCE_SERVICE_GROUP = %q"Group"
-
-            EDAM_COMMERCE_SERVICE_CYBERSOURCE = %q"CYBERSRC"
-
-            EDAM_COMMERCE_DEFAULT_CURRENCY_COUNTRY_CODE = %q"USD"
 
             EDAM_SEARCH_QUERY_LEN_MIN = 0
 
@@ -185,17 +177,25 @@ require 'limits_types'
 
             EDAM_USER_PASSWORD_REGEX = %q"^[A-Za-z0-9!#$%&'()*+,./:;<=>?@^_`{|}~\\[\\]\\\\-]{6,64}$"
 
+            EDAM_BUSINESS_URI_LEN_MAX = 32
+
             EDAM_NOTE_TAGS_MAX = 100
 
             EDAM_NOTE_RESOURCES_MAX = 1000
 
             EDAM_USER_TAGS_MAX = 100000
 
+            EDAM_BUSINESS_TAGS_MAX = 100000
+
             EDAM_USER_SAVED_SEARCHES_MAX = 100
 
             EDAM_USER_NOTES_MAX = 100000
 
+            EDAM_BUSINESS_NOTES_MAX = 500000
+
             EDAM_USER_NOTEBOOKS_MAX = 250
+
+            EDAM_BUSINESS_NOTEBOOKS_MAX = 5000
 
             EDAM_USER_RECENT_MAILED_ADDRESSES_MAX = 10
 
@@ -207,13 +207,15 @@ require 'limits_types'
 
             EDAM_USER_UPLOAD_LIMIT_PREMIUM = 1073741824
 
+            EDAM_USER_UPLOAD_LIMIT_BUSINESS = 1073741824
+
             EDAM_NOTE_SIZE_MAX_FREE = 26214400
 
-            EDAM_NOTE_SIZE_MAX_PREMIUM = 52428800
+            EDAM_NOTE_SIZE_MAX_PREMIUM = 104857600
 
             EDAM_RESOURCE_SIZE_MAX_FREE = 26214400
 
-            EDAM_RESOURCE_SIZE_MAX_PREMIUM = 52428800
+            EDAM_RESOURCE_SIZE_MAX_PREMIUM = 104857600
 
             EDAM_USER_LINKED_NOTEBOOK_MAX = 100
 
@@ -237,6 +239,8 @@ require 'limits_types'
 
             EDAM_CONTENT_CLASS_SKITCH = %q"evernote.skitch"
 
+            EDAM_CONTENT_CLASS_PENULTIMATE = %q"evernote.penultimate"
+
             EDAM_RELATED_PLAINTEXT_LEN_MIN = 1
 
             EDAM_RELATED_PLAINTEXT_LEN_MAX = 131072
@@ -246,6 +250,36 @@ require 'limits_types'
             EDAM_RELATED_MAX_NOTEBOOKS = 1
 
             EDAM_RELATED_MAX_TAGS = 25
+
+            EDAM_BUSINESS_NOTEBOOK_DESCRIPTION_LEN_MIN = 1
+
+            EDAM_BUSINESS_NOTEBOOK_DESCRIPTION_LEN_MAX = 200
+
+            EDAM_BUSINESS_NOTEBOOK_DESCRIPTION_REGEX = %q"^[^\\p{Cc}\\p{Z}]([^\\p{Cc}\\p{Zl}\\p{Zp}]{0,198}[^\\p{Cc}\\p{Z}])?$"
+
+            EDAM_PREFERENCE_NAME_LEN_MIN = 3
+
+            EDAM_PREFERENCE_NAME_LEN_MAX = 32
+
+            EDAM_PREFERENCE_VALUE_LEN_MIN = 1
+
+            EDAM_PREFERENCE_VALUE_LEN_MAX = 1024
+
+            EDAM_MAX_PREFERENCES = 100
+
+            EDAM_MAX_VALUES_PER_PREFERENCE = 250
+
+            EDAM_PREFERENCE_NAME_REGEX = %q"^[A-Za-z0-9_.-]{3,32}$"
+
+            EDAM_PREFERENCE_VALUE_REGEX = %q"^[^\\p{Cc}]{1,1024}$"
+
+            EDAM_DEVICE_ID_LEN_MAX = 32
+
+            EDAM_DEVICE_ID_REGEX = %q"^[^\\p{Cc}]{1,32}$"
+
+            EDAM_DEVICE_DESCRIPTION_LEN_MAX = 64
+
+            EDAM_DEVICE_DESCRIPTION_REGEX = %q"^[^\\p{Cc}]{1,64}$"
 
     end
   end

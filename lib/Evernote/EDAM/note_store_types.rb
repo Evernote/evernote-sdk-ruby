@@ -315,7 +315,6 @@ module Evernote
             #    The value can be a literal match or, if the last character is an
             #    asterisk, a prefix match.
             #    </dd>
-            # 
             #  </dl>
             class SyncChunkFilter
               include ::Thrift::Struct, ::Thrift::Struct_Union
@@ -409,6 +408,14 @@ module Evernote
             #    the Trash) will be returned. Otherwise, only active notes will be returned.
             #    There is no way to find both active and inactive notes in a single query.
             #    </dd>
+            # 
+            #  <dt>emphasized</dt>
+            #    <dd>
+            #    If present, a search query string that may or may not influence the notes
+            #    to be returned, both in terms of coverage as well as of order. Think of it
+            #    as a wish list, not a requirement.
+            #    Accepts the full search grammar documented in the Evernote API Overview.
+            #    </dd>
             #  </dl>
             class NoteFilter
               include ::Thrift::Struct, ::Thrift::Struct_Union
@@ -419,6 +426,7 @@ module Evernote
               TAGGUIDS = 5
               TIMEZONE = 6
               INACTIVE = 7
+              EMPHASIZED = 8
 
               FIELDS = {
                 ORDER => {:type => ::Thrift::Types::I32, :name => 'order', :optional => true},
@@ -427,7 +435,8 @@ module Evernote
                 NOTEBOOKGUID => {:type => ::Thrift::Types::STRING, :name => 'notebookGuid', :optional => true},
                 TAGGUIDS => {:type => ::Thrift::Types::LIST, :name => 'tagGuids', :element => {:type => ::Thrift::Types::STRING}, :optional => true},
                 TIMEZONE => {:type => ::Thrift::Types::STRING, :name => 'timeZone', :optional => true},
-                INACTIVE => {:type => ::Thrift::Types::BOOL, :name => 'inactive', :optional => true}
+                INACTIVE => {:type => ::Thrift::Types::BOOL, :name => 'inactive', :optional => true},
+                EMPHASIZED => {:type => ::Thrift::Types::STRING, :name => 'emphasized', :optional => true}
               }
 
               def struct_fields; FIELDS; end
@@ -743,105 +752,6 @@ module Evernote
               ::Thrift::Struct.generate_accessors self
             end
 
-            # Information for tracking the display of a particular ad by a client.
-            # 
-            # <dl>
-            #  <dt>adId</dt>
-            #    <dd>
-            #      The identifier for this ad, from a previous Ad.id given to the client
-            #    </dd>
-            # 
-            #  <dt>impressionCount</dt>
-            #    <dd>
-            #      The number of times this ad was displayed since the last successful
-            #      ad retrieval.  The client should only report times the ad was selected
-            #      when the client was visible.
-            #    </dd>
-            # 
-            #  <dt>impressionTime</dt>
-            #    <dd>
-            #      The number of seconds that the client displayed the advertisement since
-            #      the last successful ad retrieval.  This corresponds to the seconds that
-            #      the client application was visible.
-            #    </dd>
-            # </dl>
-            class AdImpressions
-              include ::Thrift::Struct, ::Thrift::Struct_Union
-              ADID = 1
-              IMPRESSIONCOUNT = 2
-              IMPRESSIONTIME = 3
-
-              FIELDS = {
-                ADID => {:type => ::Thrift::Types::I32, :name => 'adId'},
-                IMPRESSIONCOUNT => {:type => ::Thrift::Types::I32, :name => 'impressionCount'},
-                IMPRESSIONTIME => {:type => ::Thrift::Types::I32, :name => 'impressionTime'}
-              }
-
-              def struct_fields; FIELDS; end
-
-              def validate
-                raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field adId is unset!') unless @adId
-                raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field impressionCount is unset!') unless @impressionCount
-                raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field impressionTime is unset!') unless @impressionTime
-              end
-
-              ::Thrift::Struct.generate_accessors self
-            end
-
-            # Parameters that will be given by a client to the service when it requests
-            # a set of advertisements to display.  If any of these values are omitted,
-            # the service will use default values.
-            # 
-            # <dl>
-            #  <dt>clientLanguage</dt>
-            #    <dd>
-            #      The ISO 639-1 language code for the primary language for the client.
-            #      If omitted, English will be assumed ('en').
-            #    </dd>
-            # 
-            #  <dt>impressions</dt>
-            #    <dd>
-            #      A list of the impression counts and total display time for the ads
-            #      that were displayed in the last day.
-            #    </dd>
-            # 
-            #  <dt>supportHtml</dt>
-            #    <dd>
-            #      If true, the client requesting the ads supports ads specified via
-            #      general HTML (with rich media, Javascript, etc.).
-            #    </dd>
-            # 
-            #  <dt>clientProperties</dt>
-            #    <dd>
-            #      If provided, this may contain a set of key/value pairs that identify
-            #      the characteristics of a particular client that may be used to help
-            #      determine appropriate ads for that client.  These tuples may be used
-            #      either to reduce or increase the likelihood that each ad will be
-            #      returned.
-            #    </dd>
-            # </dl>
-            class AdParameters
-              include ::Thrift::Struct, ::Thrift::Struct_Union
-              CLIENTLANGUAGE = 2
-              IMPRESSIONS = 4
-              SUPPORTHTML = 5
-              CLIENTPROPERTIES = 6
-
-              FIELDS = {
-                CLIENTLANGUAGE => {:type => ::Thrift::Types::STRING, :name => 'clientLanguage', :optional => true},
-                IMPRESSIONS => {:type => ::Thrift::Types::LIST, :name => 'impressions', :element => {:type => ::Thrift::Types::STRUCT, :class => Evernote::EDAM::NoteStore::AdImpressions}, :optional => true},
-                SUPPORTHTML => {:type => ::Thrift::Types::BOOL, :name => 'supportHtml', :optional => true},
-                CLIENTPROPERTIES => {:type => ::Thrift::Types::MAP, :name => 'clientProperties', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRING}, :optional => true}
-              }
-
-              def struct_fields; FIELDS; end
-
-              def validate
-              end
-
-              ::Thrift::Struct.generate_accessors self
-            end
-
             # Parameters that must be given to the NoteStore emailNote call. These allow
             # the caller to specify the note to send, the recipient addresses, etc.
             # 
@@ -1008,7 +918,10 @@ module Evernote
             end
 
             # A description of the thing for which we are searching for related
-            # entities.  You must choose exactly one field.
+            # entities.
+            # 
+            # You must specify either <em>noteGuid</em> or <em>plainText</em>, but
+            # not both. <em>filter</em> is optional.
             # 
             # <dl>
             # <dt>noteGuid</dt>
@@ -1020,15 +933,24 @@ module Evernote
             #     You should provide a text block with a number of characters between
             #     EDAM_RELATED_PLAINTEXT_LEN_MIN and EDAM_RELATED_PLAINTEXT_LEN_MAX.
             #     </dd>
+            # 
+            # <dt>filter</dt>
+            # <dd>The list of criteria that will constrain the notes being considered
+            #     related.
+            #     Please note that some of the parameters may be ignored, such as
+            #     <em>order</em> and <em>ascending</em>.
+            # </dd>
             # </dl>
             class RelatedQuery
               include ::Thrift::Struct, ::Thrift::Struct_Union
               NOTEGUID = 1
               PLAINTEXT = 2
+              FILTER = 3
 
               FIELDS = {
                 NOTEGUID => {:type => ::Thrift::Types::STRING, :name => 'noteGuid', :optional => true},
-                PLAINTEXT => {:type => ::Thrift::Types::STRING, :name => 'plainText', :optional => true}
+                PLAINTEXT => {:type => ::Thrift::Types::STRING, :name => 'plainText', :optional => true},
+                FILTER => {:type => ::Thrift::Types::STRUCT, :name => 'filter', :class => Evernote::EDAM::NoteStore::NoteFilter, :optional => true}
               }
 
               def struct_fields; FIELDS; end
@@ -1058,16 +980,35 @@ module Evernote
             # <dd>If tags have been requested to be included, this will be the list
             #     of tags.</dd>
             # </dl>
+            # 
+            # <dt>containingNotebooks</dt>
+            # <dd>If <code>includeContainingNotebooks</code> is set to <code>true</code>
+            #     in the RelatedResultSpec, return the list of notebooks to
+            #     to which the returned related notes belong. The notebooks in this
+            #     list will occur once per notebook GUID and are represented as
+            #     NotebookDescriptor objects.</dd>
+            # </dl>
+            # 
+            # <dt>debugInfo</dt>
+            # <dd>NOTE: This should be excluded from the public API.<br /><br />
+            #     If <code>includeDebugInfo</code> in RelatedResultSpec is set to
+            #     <code>true</code>, this field may contain debug information
+            #     if the service decides to do so.</dd>
+            # </dl>
             class RelatedResult
               include ::Thrift::Struct, ::Thrift::Struct_Union
               NOTES = 1
               NOTEBOOKS = 2
               TAGS = 3
+              CONTAININGNOTEBOOKS = 4
+              DEBUGINFO = 5
 
               FIELDS = {
                 NOTES => {:type => ::Thrift::Types::LIST, :name => 'notes', :element => {:type => ::Thrift::Types::STRUCT, :class => Evernote::EDAM::Type::Note}, :optional => true},
                 NOTEBOOKS => {:type => ::Thrift::Types::LIST, :name => 'notebooks', :element => {:type => ::Thrift::Types::STRUCT, :class => Evernote::EDAM::Type::Notebook}, :optional => true},
-                TAGS => {:type => ::Thrift::Types::LIST, :name => 'tags', :element => {:type => ::Thrift::Types::STRUCT, :class => Evernote::EDAM::Type::Tag}, :optional => true}
+                TAGS => {:type => ::Thrift::Types::LIST, :name => 'tags', :element => {:type => ::Thrift::Types::STRUCT, :class => Evernote::EDAM::Type::Tag}, :optional => true},
+                CONTAININGNOTEBOOKS => {:type => ::Thrift::Types::LIST, :name => 'containingNotebooks', :element => {:type => ::Thrift::Types::STRUCT, :class => Evernote::EDAM::Type::NotebookDescriptor}, :optional => true},
+                DEBUGINFO => {:type => ::Thrift::Types::STRING, :name => 'debugInfo', :optional => true}
               }
 
               def struct_fields; FIELDS; end
@@ -1081,7 +1022,7 @@ module Evernote
             # A description of the thing for which the service will find related
             # entities, via findRelated(), together with a description of what
             # type of entities and how many you are seeking in the
-            # RelatednessResult.
+            # RelatedResult.
             # 
             # <dl>
             # <dt>maxNotes</dt>
@@ -1102,16 +1043,41 @@ module Evernote
             #     will be silently capped.  If you do not set this field, then
             #     no tags will be returned.</dd>
             # </dl>
+            # 
+            # <dt>writableNotebooksOnly</dt>
+            # <dd>Require that all returned related notebooks are writable.
+            #     The user will be able to create notes in all returned notebooks.
+            #     However, individual notes returned may still belong to notebooks
+            #     in which the user lacks the ability to create notes.</dd>
+            # </dl>
+            # 
+            # <dt>includeContainingNotebooks</dt>
+            # <dd>If set to <code>true</code>, return the containingNotebooks field
+            #     in the RelatedResult, which will contain the list of notebooks to
+            #     to which the returned related notes belong.</dd>
+            # </dl>
+            # 
+            # <dt>includeDebugInfo</dt>
+            # <dd>NOTE: This should be excluded from the public API.<br /><br />
+            #     If set to <code>true</code>, indicate that debug information should
+            #     be returned in the 'debugInfo' field of RelatedResult.</dd>
+            # </dl>
             class RelatedResultSpec
               include ::Thrift::Struct, ::Thrift::Struct_Union
               MAXNOTES = 1
               MAXNOTEBOOKS = 2
               MAXTAGS = 3
+              WRITABLENOTEBOOKSONLY = 4
+              INCLUDECONTAININGNOTEBOOKS = 5
+              INCLUDEDEBUGINFO = 6
 
               FIELDS = {
                 MAXNOTES => {:type => ::Thrift::Types::I32, :name => 'maxNotes', :optional => true},
                 MAXNOTEBOOKS => {:type => ::Thrift::Types::I32, :name => 'maxNotebooks', :optional => true},
-                MAXTAGS => {:type => ::Thrift::Types::I32, :name => 'maxTags', :optional => true}
+                MAXTAGS => {:type => ::Thrift::Types::I32, :name => 'maxTags', :optional => true},
+                WRITABLENOTEBOOKSONLY => {:type => ::Thrift::Types::BOOL, :name => 'writableNotebooksOnly', :optional => true},
+                INCLUDECONTAININGNOTEBOOKS => {:type => ::Thrift::Types::BOOL, :name => 'includeContainingNotebooks', :optional => true},
+                INCLUDEDEBUGINFO => {:type => ::Thrift::Types::BOOL, :name => 'includeDebugInfo', :optional => true}
               }
 
               def struct_fields; FIELDS; end
