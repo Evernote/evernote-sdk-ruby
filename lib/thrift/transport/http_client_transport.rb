@@ -29,14 +29,14 @@ module Thrift
     def initialize(url, proxy_addr = nil, proxy_port = nil)
       @url = URI url
       @headers = default_headers
-      @outbuf = ""
+      @outbuf = Bytes.empty_byte_buffer
       @proxy_addr = proxy_addr
       @proxy_port = proxy_port
     end
 
     def open?; true end
     def read(sz); @inbuf.read sz end
-    def write(buf); @outbuf << buf end
+    def write(buf); @outbuf << Bytes.force_binary_encoding(buf) end
 
     def add_headers(headers)
       @headers = @headers.merge(headers)
@@ -46,8 +46,10 @@ module Thrift
       http = Net::HTTP.new @url.host, @url.port, @proxy_addr, @proxy_port
       http.use_ssl = @url.scheme == "https"
       resp = http.post(@url.request_uri, @outbuf, @headers)
-      @inbuf = StringIO.new resp.body
-      @outbuf = ""
+      data = resp.body
+      data = Bytes.force_binary_encoding(data)
+      @inbuf = StringIO.new data
+      @outbuf = Bytes.empty_byte_buffer
     end
 
     private
