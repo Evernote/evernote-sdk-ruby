@@ -66,26 +66,47 @@ describe Thrift::HTTPClientTransport do
     req['name'].should eq('last')
   end
 
-  it "should use ssl when url is https" do
-    # Lifted from HTTParty
-    http = Net::HTTP.new('www.evernote.com', 443, nil, nil)
-    response = stub(Net::HTTPResponse, :[] => '', :body => '', :to_hash => {})
-    http.stub(:post).and_return(response)
-    Net::HTTP.should_receive(:new).with('www.evernote.com', 443, nil, nil).and_return(http)
-    http.should_receive(:use_ssl=).with(true)
-
-    trans = Thrift::HTTPClientTransport.new('https://www.evernote.com')
-    trans.flush
-  end
-
   it "should not use ssl when url is http" do
+    # Lifted from HTTParty
     http = Net::HTTP.new('www.evernote.com', 80, nil, nil)
     response = stub(Net::HTTPResponse, :[] => '', :body => '', :to_hash => {})
     http.stub(:post).and_return(response)
     Net::HTTP.should_receive(:new).with('www.evernote.com', 80, nil, nil).and_return(http)
+
     http.should_receive(:use_ssl=).with(false).at_most(:once)
 
     trans = Thrift::HTTPClientTransport.new('http://www.evernote.com')
     trans.flush
+  end
+
+  describe 'with https url' do
+    it "should use ssl" do
+      http = Net::HTTP.new('www.evernote.com', 443, nil, nil)
+      response = stub(Net::HTTPResponse, :[] => '', :body => '', :to_hash => {})
+      http.stub(:post).and_return(response)
+      Net::HTTP.should_receive(:new).with('www.evernote.com', 443, nil, nil).and_return(http)
+
+      http.should_receive(:use_ssl=).with(true)
+
+      trans = Thrift::HTTPClientTransport.new('https://www.evernote.com')
+      trans.flush
+    end
+
+    it "should apply ssl attributes" do
+      http = Net::HTTP.new('www.evernote.com', 443, nil, nil)
+      response = stub(Net::HTTPResponse, :[] => '', :body => '', :to_hash => {})
+      http.stub(:post).and_return(response)
+      Net::HTTP.should_receive(:new).with('www.evernote.com', 443, nil, nil).and_return(http)
+
+      http.should_receive(:ca_file=).with('/path/to/ca_file')
+      http.should_receive(:verify_depth=).with(2)
+
+      trans = Thrift::HTTPClientTransport.new('https://www.evernote.com')
+      trans.add_ssl_attributes({
+        :ca_file => '/path/to/ca_file',
+        :verify_depth => 2
+      })
+      trans.flush
+    end
   end
 end
