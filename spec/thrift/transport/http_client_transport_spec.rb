@@ -108,5 +108,17 @@ describe Thrift::HTTPClientTransport do
       })
       trans.flush
     end
+
+    it "should verify peer cert by default" do
+      http = Net::HTTP.new('www.evernote.com', 443, nil, nil)
+      response = stub(Net::HTTPResponse, :[] => '', :body => '', :to_hash => {})
+      http.stub(:post).and_return(response)
+      Net::HTTP.should_receive(:new).with('www.evernote.com', 443, nil, nil).and_return(http)
+
+      http.should_receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
+
+      trans = Thrift::HTTPClientTransport.new('https://www.evernote.com')
+      trans.flush
+    end
   end
 end

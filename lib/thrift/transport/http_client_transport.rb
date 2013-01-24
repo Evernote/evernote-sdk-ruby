@@ -74,7 +74,7 @@ module Thrift
     end
 
     def default_ssl_attributes
-      {}
+      {:verify_mode => OpenSSL::SSL::VERIFY_PEER}
     end
 
     def apply_attributes(http, attributes)
