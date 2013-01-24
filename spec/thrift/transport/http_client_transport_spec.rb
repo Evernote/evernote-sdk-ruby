@@ -66,13 +66,15 @@ describe Thrift::HTTPClientTransport do
     req['name'].should eq('last')
   end
 
-  it "should not use ssl when url is http" do
-    http = stub_next_http('www.evernote.com', 80)
+  describe 'with http url' do
+    it "should not use ssl" do
+      http = stub_next_http('www.evernote.com', 80)
 
-    http.should_receive(:use_ssl=).with(false).at_most(:once)
+      http.should_receive(:use_ssl=).with(false).at_most(:once)
 
-    trans = Thrift::HTTPClientTransport.new('http://www.evernote.com')
-    trans.flush
+      trans = Thrift::HTTPClientTransport.new('http://www.evernote.com')
+      trans.flush
+    end
   end
 
   describe 'with https url' do
