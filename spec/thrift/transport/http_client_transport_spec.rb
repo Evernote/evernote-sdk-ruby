@@ -1,4 +1,4 @@
-require 'evernote-thrift'
+require 'spec_helper'
 require 'fakeweb'
 require 'net/http'
 
@@ -67,11 +67,7 @@ describe Thrift::HTTPClientTransport do
   end
 
   it "should not use ssl when url is http" do
-    # Lifted from HTTParty
-    http = Net::HTTP.new('www.evernote.com', 80, nil, nil)
-    response = stub(Net::HTTPResponse, :[] => '', :body => '', :to_hash => {})
-    http.stub(:post).and_return(response)
-    Net::HTTP.should_receive(:new).with('www.evernote.com', 80, nil, nil).and_return(http)
+    http = stub_next_http('www.evernote.com', 80)
 
     http.should_receive(:use_ssl=).with(false).at_most(:once)
 
@@ -81,10 +77,7 @@ describe Thrift::HTTPClientTransport do
 
   describe 'with https url' do
     it "should use ssl" do
-      http = Net::HTTP.new('www.evernote.com', 443, nil, nil)
-      response = stub(Net::HTTPResponse, :[] => '', :body => '', :to_hash => {})
-      http.stub(:post).and_return(response)
-      Net::HTTP.should_receive(:new).with('www.evernote.com', 443, nil, nil).and_return(http)
+      http = stub_next_http('www.evernote.com', 443)
 
       http.should_receive(:use_ssl=).with(true)
 
@@ -93,10 +86,7 @@ describe Thrift::HTTPClientTransport do
     end
 
     it "should apply ssl attributes" do
-      http = Net::HTTP.new('www.evernote.com', 443, nil, nil)
-      response = stub(Net::HTTPResponse, :[] => '', :body => '', :to_hash => {})
-      http.stub(:post).and_return(response)
-      Net::HTTP.should_receive(:new).with('www.evernote.com', 443, nil, nil).and_return(http)
+      http = stub_next_http('www.evernote.com', 443)
 
       http.should_receive(:ca_file=).with('/path/to/ca_file')
       http.should_receive(:verify_depth=).with(2)
@@ -110,10 +100,7 @@ describe Thrift::HTTPClientTransport do
     end
 
     it "should verify peer cert by default" do
-      http = Net::HTTP.new('www.evernote.com', 443, nil, nil)
-      response = stub(Net::HTTPResponse, :[] => '', :body => '', :to_hash => {})
-      http.stub(:post).and_return(response)
-      Net::HTTP.should_receive(:new).with('www.evernote.com', 443, nil, nil).and_return(http)
+      http = stub_next_http('www.evernote.com', 443)
 
       http.should_receive(:verify_mode=).with(OpenSSL::SSL::VERIFY_PEER)
 
