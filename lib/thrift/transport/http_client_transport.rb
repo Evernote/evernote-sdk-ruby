@@ -53,10 +53,7 @@ module Thrift
 
     def flush
       http = Net::HTTP.new @url.host, @url.port, @proxy_addr, @proxy_port
-      if @url.scheme == "https"
-        http.use_ssl = true
-        apply_attributes(http, @ssl_attributes)
-      end
+      apply_ssl_attributes(http) if @url.scheme == "https"
 
       resp = http.post(@url.request_uri, @outbuf, @headers)
       data = resp.body
@@ -74,11 +71,12 @@ module Thrift
     end
 
     def default_ssl_attributes
-      {:verify_mode => OpenSSL::SSL::VERIFY_PEER}
+      {:use_ssl => true,
+        :verify_mode => OpenSSL::SSL::VERIFY_PEER}
     end
 
-    def apply_attributes(http, attributes)
-      attributes.each do |k, v|
+    def apply_ssl_attributes(http)
+      @ssl_attributes.each do |k, v|
         http.__send__("#{k}=", v)
       end
     end
