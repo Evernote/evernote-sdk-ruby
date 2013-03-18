@@ -25,4 +25,7 @@ Gem::Specification.new do |s|
   s.rubyforge_project = %q{evernote-sdk-ruby}
   s.rubygems_version = version
   s.summary = %q{This SDK contains wrapper code used to call the Evernote Cloud API from Ruby.}
+
+  s.add_development_dependency 'rspec'
+  s.add_development_dependency 'fakeweb', '~> 1.3.0'
 end
