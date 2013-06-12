@@ -44,13 +44,13 @@ module Evernote
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getBootstrapInfo failed: unknown result')
           end
 
-          def authenticate(username, password, consumerKey, consumerSecret)
-            send_authenticate(username, password, consumerKey, consumerSecret)
+          def authenticate(username, password, consumerKey, consumerSecret, supportsTwoFactor)
+            send_authenticate(username, password, consumerKey, consumerSecret, supportsTwoFactor)
             return recv_authenticate()
           end
 
-          def send_authenticate(username, password, consumerKey, consumerSecret)
-            send_message('authenticate', Authenticate_args, :username => username, :password => password, :consumerKey => consumerKey, :consumerSecret => consumerSecret)
+          def send_authenticate(username, password, consumerKey, consumerSecret, supportsTwoFactor)
+            send_message('authenticate', Authenticate_args, :username => username, :password => password, :consumerKey => consumerKey, :consumerSecret => consumerSecret, :supportsTwoFactor => supportsTwoFactor)
           end
 
           def recv_authenticate()
@@ -61,13 +61,13 @@ module Evernote
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'authenticate failed: unknown result')
           end
 
-          def authenticateLongSession(username, password, consumerKey, consumerSecret, deviceIdentifier, deviceDescription)
-            send_authenticateLongSession(username, password, consumerKey, consumerSecret, deviceIdentifier, deviceDescription)
+          def authenticateLongSession(username, password, consumerKey, consumerSecret, deviceIdentifier, deviceDescription, supportsTwoFactor)
+            send_authenticateLongSession(username, password, consumerKey, consumerSecret, deviceIdentifier, deviceDescription, supportsTwoFactor)
             return recv_authenticateLongSession()
           end
 
-          def send_authenticateLongSession(username, password, consumerKey, consumerSecret, deviceIdentifier, deviceDescription)
-            send_message('authenticateLongSession', AuthenticateLongSession_args, :username => username, :password => password, :consumerKey => consumerKey, :consumerSecret => consumerSecret, :deviceIdentifier => deviceIdentifier, :deviceDescription => deviceDescription)
+          def send_authenticateLongSession(username, password, consumerKey, consumerSecret, deviceIdentifier, deviceDescription, supportsTwoFactor)
+            send_message('authenticateLongSession', AuthenticateLongSession_args, :username => username, :password => password, :consumerKey => consumerKey, :consumerSecret => consumerSecret, :deviceIdentifier => deviceIdentifier, :deviceDescription => deviceDescription, :supportsTwoFactor => supportsTwoFactor)
           end
 
           def recv_authenticateLongSession()
@@ -76,6 +76,23 @@ module Evernote
             raise result.userException unless result.userException.nil?
             raise result.systemException unless result.systemException.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'authenticateLongSession failed: unknown result')
+          end
+
+          def completeTwoFactorAuthentication(authenticationToken, oneTimeCode, deviceIdentifier, deviceDescription)
+            send_completeTwoFactorAuthentication(authenticationToken, oneTimeCode, deviceIdentifier, deviceDescription)
+            return recv_completeTwoFactorAuthentication()
+          end
+
+          def send_completeTwoFactorAuthentication(authenticationToken, oneTimeCode, deviceIdentifier, deviceDescription)
+            send_message('completeTwoFactorAuthentication', CompleteTwoFactorAuthentication_args, :authenticationToken => authenticationToken, :oneTimeCode => oneTimeCode, :deviceIdentifier => deviceIdentifier, :deviceDescription => deviceDescription)
+          end
+
+          def recv_completeTwoFactorAuthentication()
+            result = receive_message(CompleteTwoFactorAuthentication_result)
+            return result.success unless result.success.nil?
+            raise result.userException unless result.userException.nil?
+            raise result.systemException unless result.systemException.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'completeTwoFactorAuthentication failed: unknown result')
           end
 
           def revokeLongSession(authenticationToken)
@@ -220,7 +237,7 @@ module Evernote
             args = read_args(iprot, Authenticate_args)
             result = Authenticate_result.new()
             begin
-              result.success = @handler.authenticate(args.username, args.password, args.consumerKey, args.consumerSecret)
+              result.success = @handler.authenticate(args.username, args.password, args.consumerKey, args.consumerSecret, args.supportsTwoFactor)
             rescue ::Evernote::EDAM::Error::EDAMUserException => userException
               result.userException = userException
             rescue ::Evernote::EDAM::Error::EDAMSystemException => systemException
@@ -233,13 +250,26 @@ module Evernote
             args = read_args(iprot, AuthenticateLongSession_args)
             result = AuthenticateLongSession_result.new()
             begin
-              result.success = @handler.authenticateLongSession(args.username, args.password, args.consumerKey, args.consumerSecret, args.deviceIdentifier, args.deviceDescription)
+              result.success = @handler.authenticateLongSession(args.username, args.password, args.consumerKey, args.consumerSecret, args.deviceIdentifier, args.deviceDescription, args.supportsTwoFactor)
             rescue ::Evernote::EDAM::Error::EDAMUserException => userException
               result.userException = userException
             rescue ::Evernote::EDAM::Error::EDAMSystemException => systemException
               result.systemException = systemException
             end
             write_result(result, oprot, 'authenticateLongSession', seqid)
+          end
+
+          def process_completeTwoFactorAuthentication(seqid, iprot, oprot)
+            args = read_args(iprot, CompleteTwoFactorAuthentication_args)
+            result = CompleteTwoFactorAuthentication_result.new()
+            begin
+              result.success = @handler.completeTwoFactorAuthentication(args.authenticationToken, args.oneTimeCode, args.deviceIdentifier, args.deviceDescription)
+            rescue ::Evernote::EDAM::Error::EDAMUserException => userException
+              result.userException = userException
+            rescue ::Evernote::EDAM::Error::EDAMSystemException => systemException
+              result.systemException = systemException
+            end
+            write_result(result, oprot, 'completeTwoFactorAuthentication', seqid)
           end
 
           def process_revokeLongSession(seqid, iprot, oprot)
@@ -348,7 +378,7 @@ module Evernote
           FIELDS = {
             CLIENTNAME => {:type => ::Thrift::Types::STRING, :name => 'clientName'},
             EDAMVERSIONMAJOR => {:type => ::Thrift::Types::I16, :name => 'edamVersionMajor', :default => 1},
-            EDAMVERSIONMINOR => {:type => ::Thrift::Types::I16, :name => 'edamVersionMinor', :default => 24}
+            EDAMVERSIONMINOR => {:type => ::Thrift::Types::I16, :name => 'edamVersionMinor', :default => 25}
           }
 
           def struct_fields; FIELDS; end
@@ -413,12 +443,14 @@ module Evernote
           PASSWORD = 2
           CONSUMERKEY = 3
           CONSUMERSECRET = 4
+          SUPPORTSTWOFACTOR = 5
 
           FIELDS = {
             USERNAME => {:type => ::Thrift::Types::STRING, :name => 'username'},
             PASSWORD => {:type => ::Thrift::Types::STRING, :name => 'password'},
             CONSUMERKEY => {:type => ::Thrift::Types::STRING, :name => 'consumerKey'},
-            CONSUMERSECRET => {:type => ::Thrift::Types::STRING, :name => 'consumerSecret'}
+            CONSUMERSECRET => {:type => ::Thrift::Types::STRING, :name => 'consumerSecret'},
+            SUPPORTSTWOFACTOR => {:type => ::Thrift::Types::BOOL, :name => 'supportsTwoFactor'}
           }
 
           def struct_fields; FIELDS; end
@@ -457,12 +489,56 @@ module Evernote
           CONSUMERSECRET = 4
           DEVICEIDENTIFIER = 5
           DEVICEDESCRIPTION = 6
+          SUPPORTSTWOFACTOR = 7
 
           FIELDS = {
             USERNAME => {:type => ::Thrift::Types::STRING, :name => 'username'},
             PASSWORD => {:type => ::Thrift::Types::STRING, :name => 'password'},
             CONSUMERKEY => {:type => ::Thrift::Types::STRING, :name => 'consumerKey'},
             CONSUMERSECRET => {:type => ::Thrift::Types::STRING, :name => 'consumerSecret'},
+            DEVICEIDENTIFIER => {:type => ::Thrift::Types::STRING, :name => 'deviceIdentifier'},
+            DEVICEDESCRIPTION => {:type => ::Thrift::Types::STRING, :name => 'deviceDescription'},
+            SUPPORTSTWOFACTOR => {:type => ::Thrift::Types::BOOL, :name => 'supportsTwoFactor'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class AuthenticateLongSession_result
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          SUCCESS = 0
+          USEREXCEPTION = 1
+          SYSTEMEXCEPTION = 2
+
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => ::Evernote::EDAM::UserStore::AuthenticationResult},
+            USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => ::Evernote::EDAM::Error::EDAMUserException},
+            SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => ::Evernote::EDAM::Error::EDAMSystemException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class CompleteTwoFactorAuthentication_args
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          AUTHENTICATIONTOKEN = 1
+          ONETIMECODE = 2
+          DEVICEIDENTIFIER = 3
+          DEVICEDESCRIPTION = 4
+
+          FIELDS = {
+            AUTHENTICATIONTOKEN => {:type => ::Thrift::Types::STRING, :name => 'authenticationToken'},
+            ONETIMECODE => {:type => ::Thrift::Types::STRING, :name => 'oneTimeCode'},
             DEVICEIDENTIFIER => {:type => ::Thrift::Types::STRING, :name => 'deviceIdentifier'},
             DEVICEDESCRIPTION => {:type => ::Thrift::Types::STRING, :name => 'deviceDescription'}
           }
@@ -475,7 +551,7 @@ module Evernote
           ::Thrift::Struct.generate_accessors self
         end
 
-        class AuthenticateLongSession_result
+        class CompleteTwoFactorAuthentication_result
           include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           USEREXCEPTION = 1

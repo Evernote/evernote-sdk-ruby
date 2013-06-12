@@ -926,7 +926,7 @@ module Evernote
 # entities.
 # 
 # You must specify either <em>noteGuid</em> or <em>plainText</em>, but
-# not both. <em>filter</em> is optional.
+# not both. <em>filter</em> and <em>referenceUri</em> are optional.
 # 
 # <dl>
 # <dt>noteGuid</dt>
@@ -945,17 +945,24 @@ module Evernote
 #     Please note that some of the parameters may be ignored, such as
 #     <em>order</em> and <em>ascending</em>.
 # </dd>
+# 
+# <dt>referenceUri</dt>
+# <dd>A URI string specifying a reference entity, around which "relatedness"
+#     should be based. This can be an URL pointing to a web page, for example.
+# </dd>
 # </dl>
       class RelatedQuery
         include ::Thrift::Struct, ::Thrift::Struct_Union
         NOTEGUID = 1
         PLAINTEXT = 2
         FILTER = 3
+        REFERENCEURI = 4
 
         FIELDS = {
           NOTEGUID => {:type => ::Thrift::Types::STRING, :name => 'noteGuid', :optional => true},
           PLAINTEXT => {:type => ::Thrift::Types::STRING, :name => 'plainText', :optional => true},
-          FILTER => {:type => ::Thrift::Types::STRUCT, :name => 'filter', :class => ::Evernote::EDAM::NoteStore::NoteFilter, :optional => true}
+          FILTER => {:type => ::Thrift::Types::STRUCT, :name => 'filter', :class => ::Evernote::EDAM::NoteStore::NoteFilter, :optional => true},
+          REFERENCEURI => {:type => ::Thrift::Types::STRING, :name => 'referenceUri', :optional => true}
         }
 
         def struct_fields; FIELDS; end
