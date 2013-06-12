@@ -1292,8 +1292,8 @@ module Evernote
 # the client MUST treat the note as read-only. In this case, the
 # client MAY modify the note's notebook and tags via the
 # Note.notebookGuid and Note.tagGuids fields.  The client MAY also
-# modify the pinProminence field as well as the reminderTime and
-# reminderDismissTime fields.
+# modify the reminderOrder field as well as the reminderTime and
+# reminderDoneTime fields.
 # <p>Applications should set contentClass only when they are creating notes
 # that contain structured information that needs to be maintained in order
 # for the user to be able to use the note within that application.
@@ -1323,6 +1323,9 @@ module Evernote
 # Syntax regex for name (key): EDAM_APPLICATIONDATA_NAME_REGEX
 # </dd>
 # 
+# <dt>creatorId</dt>
+# <dd>The numeric user ID of the user who originally created the note.</dd>
+# 
 # <dt>lastEditedBy</dt>
 # <dd>An indication of who made the last change to the note.  If you are
 # accessing the note via a shared notebook to which you have modification
@@ -1333,6 +1336,9 @@ module Evernote
 # guest who made the last edit.  If you do not have access to this value,
 # it will be left unset.  This field is read-only by clients.  The server
 # will ignore all values set by clients into this field.</dd>
+# 
+# <dt>lastEditorId</dt>
+# <dd>The numeric user ID of the user described in lastEditedBy.</dd>
 # 
 # <dt>classifications</dt>
 # <dd>A map of classifications applied to the note by clients or by the
@@ -1359,6 +1365,8 @@ module Evernote
         APPLICATIONDATA = 23
         LASTEDITEDBY = 24
         CLASSIFICATIONS = 26
+        CREATORID = 27
+        LASTEDITORID = 28
 
         FIELDS = {
           SUBJECTDATE => {:type => ::Thrift::Types::I64, :name => 'subjectDate', :optional => true},
@@ -1377,7 +1385,9 @@ module Evernote
           CONTENTCLASS => {:type => ::Thrift::Types::STRING, :name => 'contentClass', :optional => true},
           APPLICATIONDATA => {:type => ::Thrift::Types::STRUCT, :name => 'applicationData', :class => ::Evernote::EDAM::Type::LazyMap, :optional => true},
           LASTEDITEDBY => {:type => ::Thrift::Types::STRING, :name => 'lastEditedBy', :optional => true},
-          CLASSIFICATIONS => {:type => ::Thrift::Types::MAP, :name => 'classifications', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRING}, :optional => true}
+          CLASSIFICATIONS => {:type => ::Thrift::Types::MAP, :name => 'classifications', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRING}, :optional => true},
+          CREATORID => {:type => ::Thrift::Types::I32, :name => 'creatorId', :optional => true},
+          LASTEDITORID => {:type => ::Thrift::Types::I32, :name => 'lastEditorId', :optional => true}
         }
 
         def struct_fields; FIELDS; end
@@ -1790,6 +1800,50 @@ module Evernote
         ::Thrift::Struct.generate_accessors self
       end
 
+      # Settings meant for the recipient of a shared notebook, such as
+# for indicating which types of notifications the recipient wishes
+# for reminders, etc.
+# 
+# The reminderNotifyEmail and reminderNotifyInApp fields have a
+# 3-state read value but a 2-state write value.  On read, it is
+# possible to observe "unset", true, or false.  The initial state is
+# "unset".  When you choose to set a value, you may set it to either
+# true or false, but you cannot unset the value.  Once one of these
+# members has a true/false value, it will always have a true/false
+# value.
+# 
+# <dl>
+# <dt>reminderNotifyEmail</dt>
+# <dd>Indicates that the user wishes to receive daily e-mail notifications
+#     for reminders associated with the shared notebook.  This may be
+#     true only for business notebooks that belong to the business of
+#     which the user is a member.  You may only set this value on a
+#     notebook in your business.</dd>
+# <dt>reminderNotifyInApp</dt>
+# <dd>Indicates that the user wishes to receive notifications for
+#     reminders by applications that support providing such
+#     notifications.  The exact nature of the notification is defined
+#     by the individual applications.</dd>
+# </dl>
+# 
+      class SharedNotebookRecipientSettings
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        REMINDERNOTIFYEMAIL = 1
+        REMINDERNOTIFYINAPP = 2
+
+        FIELDS = {
+          REMINDERNOTIFYEMAIL => {:type => ::Thrift::Types::BOOL, :name => 'reminderNotifyEmail', :optional => true},
+          REMINDERNOTIFYINAPP => {:type => ::Thrift::Types::BOOL, :name => 'reminderNotifyInApp', :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
       # Shared notebooks represent a relationship between a notebook and a single
 # share invitation recipient.
 # <dl>
@@ -1843,6 +1897,12 @@ module Evernote
 #     an authorization token.  This setting expires after the first use
 #     of authenticateToSharedNotebook(...) with a valid authentication
 #     token.</dd>
+# 
+# <dt>recipientSettings</dt>
+# <dd>Settings intended for use only by the recipient of this shared
+#     notebook.  You should skip setting this value unless you want
+#     to change the value contained inside the structure, and only if
+#     you are the recipient.</dd>
 # </dl>
       class SharedNotebook
         include ::Thrift::Struct, ::Thrift::Struct_Union
@@ -1858,6 +1918,7 @@ module Evernote
         USERNAME = 9
         PRIVILEGE = 11
         ALLOWPREVIEW = 12
+        RECIPIENTSETTINGS = 13
 
         FIELDS = {
           ID => {:type => ::Thrift::Types::I64, :name => 'id', :optional => true},
@@ -1871,7 +1932,8 @@ module Evernote
           SHAREKEY => {:type => ::Thrift::Types::STRING, :name => 'shareKey', :optional => true},
           USERNAME => {:type => ::Thrift::Types::STRING, :name => 'username', :optional => true},
           PRIVILEGE => {:type => ::Thrift::Types::I32, :name => 'privilege', :optional => true, :enum_class => ::Evernote::EDAM::Type::SharedNotebookPrivilegeLevel},
-          ALLOWPREVIEW => {:type => ::Thrift::Types::BOOL, :name => 'allowPreview', :optional => true}
+          ALLOWPREVIEW => {:type => ::Thrift::Types::BOOL, :name => 'allowPreview', :optional => true},
+          RECIPIENTSETTINGS => {:type => ::Thrift::Types::STRUCT, :name => 'recipientSettings', :class => ::Evernote::EDAM::Type::SharedNotebookRecipientSettings, :optional => true}
         }
 
         def struct_fields; FIELDS; end

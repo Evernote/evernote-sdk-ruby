@@ -126,6 +126,23 @@ module Evernote
 #    end of this string to construct the full URL, as documented on our
 #    developer web site.
 #    </dd>
+#  <dt>secondFactorRequired:</dt>
+#    <dd>
+#    If set to true, this field indicates that the user has enabled two-factor
+#    authentication and must enter their second factor in order to complete
+#    authentication. In this case the value of authenticationResult will be
+#    a short-lived authentication token that may only be used to make a
+#    subsequent call to completeTwoFactorAuthentication.
+#    </dd>
+#  <dt>secondFactorDeliveryHint:</dt>
+#    <dd>
+#    When secondFactorRequired is set to true, this field may contain a string
+#    describing the second factor delivery method that the user has configured.
+#    This will typically be an obfuscated mobile device number, such as
+#    "(xxx) xxx-x095". This string can be displayed to the user to remind them
+#    how to obtain the required second factor.
+#    TODO do we need to differentiate between SMS and voice delivery?
+#    </dd>
 #  </dl>
       class AuthenticationResult
         include ::Thrift::Struct, ::Thrift::Struct_Union
@@ -136,6 +153,8 @@ module Evernote
         PUBLICUSERINFO = 5
         NOTESTOREURL = 6
         WEBAPIURLPREFIX = 7
+        SECONDFACTORREQUIRED = 8
+        SECONDFACTORDELIVERYHINT = 9
 
         FIELDS = {
           CURRENTTIME => {:type => ::Thrift::Types::I64, :name => 'currentTime'},
@@ -144,7 +163,9 @@ module Evernote
           USER => {:type => ::Thrift::Types::STRUCT, :name => 'user', :class => ::Evernote::EDAM::Type::User, :optional => true},
           PUBLICUSERINFO => {:type => ::Thrift::Types::STRUCT, :name => 'publicUserInfo', :class => ::Evernote::EDAM::UserStore::PublicUserInfo, :optional => true},
           NOTESTOREURL => {:type => ::Thrift::Types::STRING, :name => 'noteStoreUrl', :optional => true},
-          WEBAPIURLPREFIX => {:type => ::Thrift::Types::STRING, :name => 'webApiUrlPrefix', :optional => true}
+          WEBAPIURLPREFIX => {:type => ::Thrift::Types::STRING, :name => 'webApiUrlPrefix', :optional => true},
+          SECONDFACTORREQUIRED => {:type => ::Thrift::Types::BOOL, :name => 'secondFactorRequired', :optional => true},
+          SECONDFACTORDELIVERYHINT => {:type => ::Thrift::Types::STRING, :name => 'secondFactorDeliveryHint', :optional => true}
         }
 
         def struct_fields; FIELDS; end

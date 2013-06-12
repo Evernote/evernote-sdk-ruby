@@ -1081,6 +1081,24 @@ module Evernote
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'updateSharedNotebook failed: unknown result')
           end
 
+          def setSharedNotebookRecipientSettings(authenticationToken, sharedNotebookId, recipientSettings)
+            send_setSharedNotebookRecipientSettings(authenticationToken, sharedNotebookId, recipientSettings)
+            return recv_setSharedNotebookRecipientSettings()
+          end
+
+          def send_setSharedNotebookRecipientSettings(authenticationToken, sharedNotebookId, recipientSettings)
+            send_message('setSharedNotebookRecipientSettings', SetSharedNotebookRecipientSettings_args, :authenticationToken => authenticationToken, :sharedNotebookId => sharedNotebookId, :recipientSettings => recipientSettings)
+          end
+
+          def recv_setSharedNotebookRecipientSettings()
+            result = receive_message(SetSharedNotebookRecipientSettings_result)
+            return result.success unless result.success.nil?
+            raise result.userException unless result.userException.nil?
+            raise result.notFoundException unless result.notFoundException.nil?
+            raise result.systemException unless result.systemException.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'setSharedNotebookRecipientSettings failed: unknown result')
+          end
+
           def sendMessageToSharedNotebookMembers(authenticationToken, notebookGuid, messageText, recipients)
             send_sendMessageToSharedNotebookMembers(authenticationToken, notebookGuid, messageText, recipients)
             return recv_sendMessageToSharedNotebookMembers()
@@ -1295,13 +1313,13 @@ module Evernote
             return
           end
 
-          def authenticateToSharedNote(guid, noteKey)
-            send_authenticateToSharedNote(guid, noteKey)
+          def authenticateToSharedNote(guid, noteKey, authenticationToken)
+            send_authenticateToSharedNote(guid, noteKey, authenticationToken)
             return recv_authenticateToSharedNote()
           end
 
-          def send_authenticateToSharedNote(guid, noteKey)
-            send_message('authenticateToSharedNote', AuthenticateToSharedNote_args, :guid => guid, :noteKey => noteKey)
+          def send_authenticateToSharedNote(guid, noteKey, authenticationToken)
+            send_message('authenticateToSharedNote', AuthenticateToSharedNote_args, :guid => guid, :noteKey => noteKey, :authenticationToken => authenticationToken)
           end
 
           def recv_authenticateToSharedNote()
@@ -2212,6 +2230,21 @@ module Evernote
             write_result(result, oprot, 'updateSharedNotebook', seqid)
           end
 
+          def process_setSharedNotebookRecipientSettings(seqid, iprot, oprot)
+            args = read_args(iprot, SetSharedNotebookRecipientSettings_args)
+            result = SetSharedNotebookRecipientSettings_result.new()
+            begin
+              result.success = @handler.setSharedNotebookRecipientSettings(args.authenticationToken, args.sharedNotebookId, args.recipientSettings)
+            rescue ::Evernote::EDAM::Error::EDAMUserException => userException
+              result.userException = userException
+            rescue ::Evernote::EDAM::Error::EDAMNotFoundException => notFoundException
+              result.notFoundException = notFoundException
+            rescue ::Evernote::EDAM::Error::EDAMSystemException => systemException
+              result.systemException = systemException
+            end
+            write_result(result, oprot, 'setSharedNotebookRecipientSettings', seqid)
+          end
+
           def process_sendMessageToSharedNotebookMembers(seqid, iprot, oprot)
             args = read_args(iprot, SendMessageToSharedNotebookMembers_args)
             result = SendMessageToSharedNotebookMembers_result.new()
@@ -2396,7 +2429,7 @@ module Evernote
             args = read_args(iprot, AuthenticateToSharedNote_args)
             result = AuthenticateToSharedNote_result.new()
             begin
-              result.success = @handler.authenticateToSharedNote(args.guid, args.noteKey)
+              result.success = @handler.authenticateToSharedNote(args.guid, args.noteKey, args.authenticationToken)
             rescue ::Evernote::EDAM::Error::EDAMUserException => userException
               result.userException = userException
             rescue ::Evernote::EDAM::Error::EDAMNotFoundException => notFoundException
@@ -4870,6 +4903,48 @@ module Evernote
           ::Thrift::Struct.generate_accessors self
         end
 
+        class SetSharedNotebookRecipientSettings_args
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          AUTHENTICATIONTOKEN = 1
+          SHAREDNOTEBOOKID = 2
+          RECIPIENTSETTINGS = 3
+
+          FIELDS = {
+            AUTHENTICATIONTOKEN => {:type => ::Thrift::Types::STRING, :name => 'authenticationToken'},
+            SHAREDNOTEBOOKID => {:type => ::Thrift::Types::I64, :name => 'sharedNotebookId'},
+            RECIPIENTSETTINGS => {:type => ::Thrift::Types::STRUCT, :name => 'recipientSettings', :class => ::Evernote::EDAM::Type::SharedNotebookRecipientSettings}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class SetSharedNotebookRecipientSettings_result
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          SUCCESS = 0
+          USEREXCEPTION = 1
+          NOTFOUNDEXCEPTION = 2
+          SYSTEMEXCEPTION = 3
+
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::I32, :name => 'success'},
+            USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => ::Evernote::EDAM::Error::EDAMUserException},
+            NOTFOUNDEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'notFoundException', :class => ::Evernote::EDAM::Error::EDAMNotFoundException},
+            SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => ::Evernote::EDAM::Error::EDAMSystemException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
         class SendMessageToSharedNotebookMembers_args
           include ::Thrift::Struct, ::Thrift::Struct_Union
           AUTHENTICATIONTOKEN = 1
@@ -5348,10 +5423,12 @@ module Evernote
           include ::Thrift::Struct, ::Thrift::Struct_Union
           GUID = 1
           NOTEKEY = 2
+          AUTHENTICATIONTOKEN = 3
 
           FIELDS = {
             GUID => {:type => ::Thrift::Types::STRING, :name => 'guid'},
-            NOTEKEY => {:type => ::Thrift::Types::STRING, :name => 'noteKey'}
+            NOTEKEY => {:type => ::Thrift::Types::STRING, :name => 'noteKey'},
+            AUTHENTICATIONTOKEN => {:type => ::Thrift::Types::STRING, :name => 'authenticationToken'}
           }
 
           def struct_fields; FIELDS; end
