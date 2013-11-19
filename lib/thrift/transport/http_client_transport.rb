@@ -56,6 +56,9 @@ module Thrift
       apply_ssl_attributes(http) if @url.scheme == "https"
 
       resp = http.post(@url.request_uri, @outbuf, @headers)
+      if 'application/x-thrift'.downcase != resp.content_type.downcase
+        raise TransportException.new(TransportException::UNKNOWN, "Unexpected response content type: " + resp.content_type)
+      end
       data = resp.body
       data = Bytes.force_binary_encoding(data)
       @inbuf = StringIO.new data
