@@ -12,7 +12,7 @@ module Evernote
     module UserStore
       EDAM_VERSION_MAJOR = 1
 
-      EDAM_VERSION_MINOR = 25
+      EDAM_VERSION_MINOR = 28
 
     end
   end

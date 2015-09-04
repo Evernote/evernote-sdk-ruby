@@ -18,6 +18,8 @@ module Evernote
 
       EDAM_NOTE_SOURCE_WEB_CLIP = %q"web.clip"
 
+      EDAM_NOTE_SOURCE_WEB_CLIP_SIMPLIFIED = %q"Clearly"
+
       EDAM_NOTE_SOURCE_MAIL_CLIP = %q"mail.clip"
 
       EDAM_NOTE_SOURCE_MAIL_SMTP_GATEWAY = %q"mail.smtp"

@@ -5,6 +5,8 @@
 #
 
 require 'thrift'
+require 'types_types'
+
 
 module Evernote
   module EDAM
@@ -29,8 +31,17 @@ module Evernote
         UNSUPPORTED_OPERATION = 17
         TAKEN_DOWN = 18
         RATE_LIMIT_REACHED = 19
-        VALUE_MAP = {1 => "UNKNOWN", 2 => "BAD_DATA_FORMAT", 3 => "PERMISSION_DENIED", 4 => "INTERNAL_ERROR", 5 => "DATA_REQUIRED", 6 => "LIMIT_REACHED", 7 => "QUOTA_REACHED", 8 => "INVALID_AUTH", 9 => "AUTH_EXPIRED", 10 => "DATA_CONFLICT", 11 => "ENML_VALIDATION", 12 => "SHARD_UNAVAILABLE", 13 => "LEN_TOO_SHORT", 14 => "LEN_TOO_LONG", 15 => "TOO_FEW", 16 => "TOO_MANY", 17 => "UNSUPPORTED_OPERATION", 18 => "TAKEN_DOWN", 19 => "RATE_LIMIT_REACHED"}
-        VALID_VALUES = Set.new([UNKNOWN, BAD_DATA_FORMAT, PERMISSION_DENIED, INTERNAL_ERROR, DATA_REQUIRED, LIMIT_REACHED, QUOTA_REACHED, INVALID_AUTH, AUTH_EXPIRED, DATA_CONFLICT, ENML_VALIDATION, SHARD_UNAVAILABLE, LEN_TOO_SHORT, LEN_TOO_LONG, TOO_FEW, TOO_MANY, UNSUPPORTED_OPERATION, TAKEN_DOWN, RATE_LIMIT_REACHED]).freeze
+        BUSINESS_SECURITY_LOGIN_REQUIRED = 20
+        VALUE_MAP = {1 => "UNKNOWN", 2 => "BAD_DATA_FORMAT", 3 => "PERMISSION_DENIED", 4 => "INTERNAL_ERROR", 5 => "DATA_REQUIRED", 6 => "LIMIT_REACHED", 7 => "QUOTA_REACHED", 8 => "INVALID_AUTH", 9 => "AUTH_EXPIRED", 10 => "DATA_CONFLICT", 11 => "ENML_VALIDATION", 12 => "SHARD_UNAVAILABLE", 13 => "LEN_TOO_SHORT", 14 => "LEN_TOO_LONG", 15 => "TOO_FEW", 16 => "TOO_MANY", 17 => "UNSUPPORTED_OPERATION", 18 => "TAKEN_DOWN", 19 => "RATE_LIMIT_REACHED", 20 => "BUSINESS_SECURITY_LOGIN_REQUIRED"}
+        VALID_VALUES = Set.new([UNKNOWN, BAD_DATA_FORMAT, PERMISSION_DENIED, INTERNAL_ERROR, DATA_REQUIRED, LIMIT_REACHED, QUOTA_REACHED, INVALID_AUTH, AUTH_EXPIRED, DATA_CONFLICT, ENML_VALIDATION, SHARD_UNAVAILABLE, LEN_TOO_SHORT, LEN_TOO_LONG, TOO_FEW, TOO_MANY, UNSUPPORTED_OPERATION, TAKEN_DOWN, RATE_LIMIT_REACHED, BUSINESS_SECURITY_LOGIN_REQUIRED]).freeze
+      end
+
+      module EDAMInvalidContactReason
+        BAD_ADDRESS = 0
+        DUPLICATE_CONTACT = 1
+        NO_CONNECTION = 2
+        VALUE_MAP = {0 => "BAD_ADDRESS", 1 => "DUPLICATE_CONTACT", 2 => "NO_CONNECTION"}
+        VALID_VALUES = Set.new([BAD_ADDRESS, DUPLICATE_CONTACT, NO_CONNECTION]).freeze
       end
 
       # This exception is thrown by EDAM procedures when a call fails as a result of
@@ -130,6 +141,47 @@ module Evernote
         def struct_fields; FIELDS; end
 
         def validate
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # An exception thrown when the provided Contacts fail validation. For instance,
+# email domains could be invalid, phone numbers might not be valid for SMS,
+# etc.
+# 
+# We will not provide individual reasons for each Contact's validation failure.
+# The presence of the Contact in this exception means that the user must figure
+# out how to take appropriate action to fix this Contact.
+# 
+# <dl>
+#   <dt>contacts</dt>
+#   <dd>The list of Contacts that are considered invalid by the service</dd>
+# 
+#   <dt>parameter</dt>
+#   <dd>If the error applied to a particular input parameter, this will
+#   indicate which parameter.</dd>
+# 
+#   <dt>reasons</dt>
+#   <dd>If supplied, the list of reasons why the server considered a contact invalid,
+#   matching, in order, the list returned in the contacts field.</dd>
+# </dl>
+      class EDAMInvalidContactsException < ::Thrift::Exception
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        CONTACTS = 1
+        PARAMETER = 2
+        REASONS = 3
+
+        FIELDS = {
+          CONTACTS => {:type => ::Thrift::Types::LIST, :name => 'contacts', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::Type::Contact}},
+          PARAMETER => {:type => ::Thrift::Types::STRING, :name => 'parameter', :optional => true},
+          REASONS => {:type => ::Thrift::Types::LIST, :name => 'reasons', :element => {:type => ::Thrift::Types::I32, :enum_class => ::Evernote::EDAM::Error::EDAMInvalidContactReason}, :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+          raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field contacts is unset!') unless @contacts
         end
 
         ::Thrift::Struct.generate_accessors self

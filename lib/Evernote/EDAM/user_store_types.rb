@@ -25,8 +25,12 @@ module Evernote
 #    </dd>
 #  <dt>privilege:</dt>
 #    <dd>
-#    The privilege level of the account, to determine whether
-#    this is a Premium or Free account.
+#    DEPRECATED - ServiceLevel field should be used instead to determine which features
+#                 to offer to the user.
+#    </dd>
+#  <dt>serviceLevel:</dt>
+#    <dd>
+#    The service level of the account.
 #    </dd>
 #  <dt>noteStoreUrl:</dt>
 #    <dd>
@@ -49,16 +53,14 @@ module Evernote
       class PublicUserInfo
         include ::Thrift::Struct, ::Thrift::Struct_Union
         USERID = 1
-        SHARDID = 2
-        PRIVILEGE = 3
+        SERVICELEVEL = 7
         USERNAME = 4
         NOTESTOREURL = 5
         WEBAPIURLPREFIX = 6
 
         FIELDS = {
           USERID => {:type => ::Thrift::Types::I32, :name => 'userId'},
-          SHARDID => {:type => ::Thrift::Types::STRING, :name => 'shardId'},
-          PRIVILEGE => {:type => ::Thrift::Types::I32, :name => 'privilege', :optional => true, :enum_class => ::Evernote::EDAM::Type::PrivilegeLevel},
+          SERVICELEVEL => {:type => ::Thrift::Types::I32, :name => 'serviceLevel', :optional => true, :enum_class => ::Evernote::EDAM::Type::ServiceLevel},
           USERNAME => {:type => ::Thrift::Types::STRING, :name => 'username', :optional => true},
           NOTESTOREURL => {:type => ::Thrift::Types::STRING, :name => 'noteStoreUrl', :optional => true},
           WEBAPIURLPREFIX => {:type => ::Thrift::Types::STRING, :name => 'webApiUrlPrefix', :optional => true}
@@ -68,10 +70,80 @@ module Evernote
 
         def validate
           raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field userId is unset!') unless @userId
-          raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field shardId is unset!') unless @shardId
-          unless @privilege.nil? || ::Evernote::EDAM::Type::PrivilegeLevel::VALID_VALUES.include?(@privilege)
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field privilege!')
+          unless @serviceLevel.nil? || ::Evernote::EDAM::Type::ServiceLevel::VALID_VALUES.include?(@serviceLevel)
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field serviceLevel!')
           end
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # <dl>
+# <dt>noteStoreUrl:</dt>
+#   <dd>
+#   This field will contain the full URL that clients should use to make
+#   NoteStore requests to the server shard that contains that user's data.
+#   I.e. this is the URL that should be used to create the Thrift HTTP client
+#   transport to send messages to the NoteStore service for the account.
+#   </dd>
+# <dt>webApiUrlPrefix:</dt>
+#   <dd>
+#   This field will contain the initial part of the URLs that should be used
+#   to make requests to Evernote's thin client "web API", which provide
+#   optimized operations for clients that aren't capable of manipulating
+#   the full contents of accounts via the full Thrift data model. Clients
+#   should concatenate the relative path for the various servlets onto the
+#   end of this string to construct the full URL, as documented on our
+#   developer web site.
+#   </dd>
+# <dt>userStoreUrl:</dt>
+#   <dd>
+#   This field will contain the full URL that clients should use to make UserStore
+#   requests after successfully authenticating. I.e. this is the URL that should be used
+#   to create the Thrift HTTP client transport to send messages to the UserStore service
+#   for this account.
+#   </dd>
+# <dt>utilityUrl:</dt>
+#   <dd>
+#   This field will contain the full URL that clients should use to make Utility requests
+#   to the server shard that contains that user's data. I.e. this is the URL that should
+#   be used to create the Thrift HTTP client transport to send messages to the Utility
+#   service for the account.
+#   </dd>
+# <dt>messageStoreUrl:</dt>
+#   <dd>
+#   This field will contain the full URL that clients should use to make MessageStore
+#   requests to the server. I.e. this is the URL that should be used to create the
+#   Thrift HTTP client transport to send messages to the MessageStore service for the
+#   account.
+#   </dd>
+# <dt>userWebSocketUrl:</dt>
+#   <dd>
+#   This field will contain the full URL that clients should use when opening a
+#   persistent web socket to recieve notification of events for the authenticated user.
+#   </dd>
+# </dl>
+      class UserUrls
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        NOTESTOREURL = 1
+        WEBAPIURLPREFIX = 2
+        USERSTOREURL = 3
+        UTILITYURL = 4
+        MESSAGESTOREURL = 5
+        USERWEBSOCKETURL = 6
+
+        FIELDS = {
+          NOTESTOREURL => {:type => ::Thrift::Types::STRING, :name => 'noteStoreUrl', :optional => true},
+          WEBAPIURLPREFIX => {:type => ::Thrift::Types::STRING, :name => 'webApiUrlPrefix', :optional => true},
+          USERSTOREURL => {:type => ::Thrift::Types::STRING, :name => 'userStoreUrl', :optional => true},
+          UTILITYURL => {:type => ::Thrift::Types::STRING, :name => 'utilityUrl', :optional => true},
+          MESSAGESTOREURL => {:type => ::Thrift::Types::STRING, :name => 'messageStoreUrl', :optional => true},
+          USERWEBSOCKETURL => {:type => ::Thrift::Types::STRING, :name => 'userWebSocketUrl', :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
         end
 
         ::Thrift::Struct.generate_accessors self
@@ -111,20 +183,11 @@ module Evernote
 #    </dd>
 #  <dt>noteStoreUrl:</dt>
 #    <dd>
-#    This field will contain the full URL that clients should use to make
-#    NoteStore requests to the server shard that contains that user's data.
-#    I.e. this is the URL that should be used to create the Thrift HTTP client
-#    transport to send messages to the NoteStore service for the account.
+#    DEPRECATED - Client applications should use urls.noteStoreUrl.
 #    </dd>
 #  <dt>webApiUrlPrefix:</dt>
 #    <dd>
-#    This field will contain the initial part of the URLs that should be used
-#    to make requests to Evernote's thin client "web API", which provide
-#    optimized operations for clients that aren't capable of manipulating
-#    the full contents of accounts via the full Thrift data model. Clients
-#    should concatenate the relative path for the various servlets onto the
-#    end of this string to construct the full URL, as documented on our
-#    developer web site.
+#    DEPRECATED - Client applications should use urls.webApiUrlPrefix.
 #    </dd>
 #  <dt>secondFactorRequired:</dt>
 #    <dd>
@@ -141,7 +204,11 @@ module Evernote
 #    This will typically be an obfuscated mobile device number, such as
 #    "(xxx) xxx-x095". This string can be displayed to the user to remind them
 #    how to obtain the required second factor.
-#    TODO do we need to differentiate between SMS and voice delivery?
+#    </dd>
+#  <dt>urls</dt>
+#    <dd>
+#    This structure will contain all of the URLs that clients need to make requests to the
+#    Evernote service on behalf of the authenticated User.
 #    </dd>
 #  </dl>
       class AuthenticationResult
@@ -155,6 +222,7 @@ module Evernote
         WEBAPIURLPREFIX = 7
         SECONDFACTORREQUIRED = 8
         SECONDFACTORDELIVERYHINT = 9
+        URLS = 10
 
         FIELDS = {
           CURRENTTIME => {:type => ::Thrift::Types::I64, :name => 'currentTime'},
@@ -165,7 +233,8 @@ module Evernote
           NOTESTOREURL => {:type => ::Thrift::Types::STRING, :name => 'noteStoreUrl', :optional => true},
           WEBAPIURLPREFIX => {:type => ::Thrift::Types::STRING, :name => 'webApiUrlPrefix', :optional => true},
           SECONDFACTORREQUIRED => {:type => ::Thrift::Types::BOOL, :name => 'secondFactorRequired', :optional => true},
-          SECONDFACTORDELIVERYHINT => {:type => ::Thrift::Types::STRING, :name => 'secondFactorDeliveryHint', :optional => true}
+          SECONDFACTORDELIVERYHINT => {:type => ::Thrift::Types::STRING, :name => 'secondFactorDeliveryHint', :optional => true},
+          URLS => {:type => ::Thrift::Types::STRUCT, :name => 'urls', :class => ::Evernote::EDAM::UserStore::UserUrls, :optional => true}
         }
 
         def struct_fields; FIELDS; end
@@ -207,6 +276,15 @@ module Evernote
 #    The domain used for an Evernote user's incoming email address, which allows notes to
 #    be emailed into an account. E.g. m.evernote.com.
 #    </dd>
+#  <dt>cardscanUrl:</dt>
+#    <dd>
+#    The full URL for the business card scanning service, e.g.
+#    https://cscan.evernote.com/cardagain.
+#    </dd>
+#  <dt>announcementsUrl</dt>
+#    <dd>
+#    The base URL for the Announcements service, e.g. https://announce.evernote.com.
+#    </dd>
 #  <dt>enableFacebookSharing:</dt>
 #    <dd>
 #    Whether the client application should enable sharing of notes on Facebook.
@@ -235,6 +313,10 @@ module Evernote
 #    <dd>
 #    Whether the client application should enable sharing of notes on Twitter.
 #    </dd>
+#  <dt>enableGoogle:</dt>
+#    <dd>
+#    Whether the client application should enable authentication with Google,
+#    for example to allow integration with a user's Gmail contacts.
 #  </dl>
       class BootstrapSettings
         include ::Thrift::Struct, ::Thrift::Struct_Union
@@ -242,6 +324,8 @@ module Evernote
         MARKETINGURL = 2
         SUPPORTURL = 3
         ACCOUNTEMAILDOMAIN = 4
+        CARDSCANURL = 14
+        ANNOUNCEMENTSURL = 15
         ENABLEFACEBOOKSHARING = 5
         ENABLEGIFTSUBSCRIPTIONS = 6
         ENABLESUPPORTTICKETS = 7
@@ -251,12 +335,15 @@ module Evernote
         ENABLETWITTERSHARING = 11
         ENABLELINKEDINSHARING = 12
         ENABLEPUBLICNOTEBOOKS = 13
+        ENABLEGOOGLE = 16
 
         FIELDS = {
           SERVICEHOST => {:type => ::Thrift::Types::STRING, :name => 'serviceHost'},
           MARKETINGURL => {:type => ::Thrift::Types::STRING, :name => 'marketingUrl'},
           SUPPORTURL => {:type => ::Thrift::Types::STRING, :name => 'supportUrl'},
           ACCOUNTEMAILDOMAIN => {:type => ::Thrift::Types::STRING, :name => 'accountEmailDomain'},
+          CARDSCANURL => {:type => ::Thrift::Types::STRING, :name => 'cardscanUrl', :optional => true},
+          ANNOUNCEMENTSURL => {:type => ::Thrift::Types::STRING, :name => 'announcementsUrl', :optional => true},
           ENABLEFACEBOOKSHARING => {:type => ::Thrift::Types::BOOL, :name => 'enableFacebookSharing', :optional => true},
           ENABLEGIFTSUBSCRIPTIONS => {:type => ::Thrift::Types::BOOL, :name => 'enableGiftSubscriptions', :optional => true},
           ENABLESUPPORTTICKETS => {:type => ::Thrift::Types::BOOL, :name => 'enableSupportTickets', :optional => true},
@@ -265,7 +352,8 @@ module Evernote
           ENABLESPONSOREDACCOUNTS => {:type => ::Thrift::Types::BOOL, :name => 'enableSponsoredAccounts', :optional => true},
           ENABLETWITTERSHARING => {:type => ::Thrift::Types::BOOL, :name => 'enableTwitterSharing', :optional => true},
           ENABLELINKEDINSHARING => {:type => ::Thrift::Types::BOOL, :name => 'enableLinkedInSharing', :optional => true},
-          ENABLEPUBLICNOTEBOOKS => {:type => ::Thrift::Types::BOOL, :name => 'enablePublicNotebooks', :optional => true}
+          ENABLEPUBLICNOTEBOOKS => {:type => ::Thrift::Types::BOOL, :name => 'enablePublicNotebooks', :optional => true},
+          ENABLEGOOGLE => {:type => ::Thrift::Types::BOOL, :name => 'enableGoogle', :optional => true}
         }
 
         def struct_fields; FIELDS; end

@@ -44,23 +44,6 @@ module Evernote
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getBootstrapInfo failed: unknown result')
           end
 
-          def authenticate(username, password, consumerKey, consumerSecret, supportsTwoFactor)
-            send_authenticate(username, password, consumerKey, consumerSecret, supportsTwoFactor)
-            return recv_authenticate()
-          end
-
-          def send_authenticate(username, password, consumerKey, consumerSecret, supportsTwoFactor)
-            send_message('authenticate', Authenticate_args, :username => username, :password => password, :consumerKey => consumerKey, :consumerSecret => consumerSecret, :supportsTwoFactor => supportsTwoFactor)
-          end
-
-          def recv_authenticate()
-            result = receive_message(Authenticate_result)
-            return result.success unless result.success.nil?
-            raise result.userException unless result.userException.nil?
-            raise result.systemException unless result.systemException.nil?
-            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'authenticate failed: unknown result')
-          end
-
           def authenticateLongSession(username, password, consumerKey, consumerSecret, deviceIdentifier, deviceDescription, supportsTwoFactor)
             send_authenticateLongSession(username, password, consumerKey, consumerSecret, deviceIdentifier, deviceDescription, supportsTwoFactor)
             return recv_authenticateLongSession()
@@ -128,23 +111,6 @@ module Evernote
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'authenticateToBusiness failed: unknown result')
           end
 
-          def refreshAuthentication(authenticationToken)
-            send_refreshAuthentication(authenticationToken)
-            return recv_refreshAuthentication()
-          end
-
-          def send_refreshAuthentication(authenticationToken)
-            send_message('refreshAuthentication', RefreshAuthentication_args, :authenticationToken => authenticationToken)
-          end
-
-          def recv_refreshAuthentication()
-            result = receive_message(RefreshAuthentication_result)
-            return result.success unless result.success.nil?
-            raise result.userException unless result.userException.nil?
-            raise result.systemException unless result.systemException.nil?
-            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'refreshAuthentication failed: unknown result')
-          end
-
           def getUser(authenticationToken)
             send_getUser(authenticationToken)
             return recv_getUser()
@@ -197,21 +163,138 @@ module Evernote
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getPremiumInfo failed: unknown result')
           end
 
-          def getNoteStoreUrl(authenticationToken)
-            send_getNoteStoreUrl(authenticationToken)
-            return recv_getNoteStoreUrl()
+          def getSubscriptionInfo(authenticationToken)
+            send_getSubscriptionInfo(authenticationToken)
+            return recv_getSubscriptionInfo()
           end
 
-          def send_getNoteStoreUrl(authenticationToken)
-            send_message('getNoteStoreUrl', GetNoteStoreUrl_args, :authenticationToken => authenticationToken)
+          def send_getSubscriptionInfo(authenticationToken)
+            send_message('getSubscriptionInfo', GetSubscriptionInfo_args, :authenticationToken => authenticationToken)
           end
 
-          def recv_getNoteStoreUrl()
-            result = receive_message(GetNoteStoreUrl_result)
+          def recv_getSubscriptionInfo()
+            result = receive_message(GetSubscriptionInfo_result)
             return result.success unless result.success.nil?
             raise result.userException unless result.userException.nil?
             raise result.systemException unless result.systemException.nil?
-            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getNoteStoreUrl failed: unknown result')
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getSubscriptionInfo failed: unknown result')
+          end
+
+          def getUserUrls(authenticationToken)
+            send_getUserUrls(authenticationToken)
+            return recv_getUserUrls()
+          end
+
+          def send_getUserUrls(authenticationToken)
+            send_message('getUserUrls', GetUserUrls_args, :authenticationToken => authenticationToken)
+          end
+
+          def recv_getUserUrls()
+            result = receive_message(GetUserUrls_result)
+            return result.success unless result.success.nil?
+            raise result.userException unless result.userException.nil?
+            raise result.systemException unless result.systemException.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getUserUrls failed: unknown result')
+          end
+
+          def inviteToBusiness(authenticationToken, emailAddress)
+            send_inviteToBusiness(authenticationToken, emailAddress)
+            recv_inviteToBusiness()
+          end
+
+          def send_inviteToBusiness(authenticationToken, emailAddress)
+            send_message('inviteToBusiness', InviteToBusiness_args, :authenticationToken => authenticationToken, :emailAddress => emailAddress)
+          end
+
+          def recv_inviteToBusiness()
+            result = receive_message(InviteToBusiness_result)
+            raise result.userException unless result.userException.nil?
+            raise result.systemException unless result.systemException.nil?
+            return
+          end
+
+          def removeFromBusiness(authenticationToken, emailAddress)
+            send_removeFromBusiness(authenticationToken, emailAddress)
+            recv_removeFromBusiness()
+          end
+
+          def send_removeFromBusiness(authenticationToken, emailAddress)
+            send_message('removeFromBusiness', RemoveFromBusiness_args, :authenticationToken => authenticationToken, :emailAddress => emailAddress)
+          end
+
+          def recv_removeFromBusiness()
+            result = receive_message(RemoveFromBusiness_result)
+            raise result.userException unless result.userException.nil?
+            raise result.systemException unless result.systemException.nil?
+            raise result.notFoundException unless result.notFoundException.nil?
+            return
+          end
+
+          def updateBusinessUserIdentifier(authenticationToken, oldEmailAddress, newEmailAddress)
+            send_updateBusinessUserIdentifier(authenticationToken, oldEmailAddress, newEmailAddress)
+            recv_updateBusinessUserIdentifier()
+          end
+
+          def send_updateBusinessUserIdentifier(authenticationToken, oldEmailAddress, newEmailAddress)
+            send_message('updateBusinessUserIdentifier', UpdateBusinessUserIdentifier_args, :authenticationToken => authenticationToken, :oldEmailAddress => oldEmailAddress, :newEmailAddress => newEmailAddress)
+          end
+
+          def recv_updateBusinessUserIdentifier()
+            result = receive_message(UpdateBusinessUserIdentifier_result)
+            raise result.userException unless result.userException.nil?
+            raise result.systemException unless result.systemException.nil?
+            raise result.notFoundException unless result.notFoundException.nil?
+            return
+          end
+
+          def listBusinessUsers(authenticationToken)
+            send_listBusinessUsers(authenticationToken)
+            return recv_listBusinessUsers()
+          end
+
+          def send_listBusinessUsers(authenticationToken)
+            send_message('listBusinessUsers', ListBusinessUsers_args, :authenticationToken => authenticationToken)
+          end
+
+          def recv_listBusinessUsers()
+            result = receive_message(ListBusinessUsers_result)
+            return result.success unless result.success.nil?
+            raise result.userException unless result.userException.nil?
+            raise result.systemException unless result.systemException.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'listBusinessUsers failed: unknown result')
+          end
+
+          def listBusinessInvitations(authenticationToken, includeRequestedInvitations)
+            send_listBusinessInvitations(authenticationToken, includeRequestedInvitations)
+            return recv_listBusinessInvitations()
+          end
+
+          def send_listBusinessInvitations(authenticationToken, includeRequestedInvitations)
+            send_message('listBusinessInvitations', ListBusinessInvitations_args, :authenticationToken => authenticationToken, :includeRequestedInvitations => includeRequestedInvitations)
+          end
+
+          def recv_listBusinessInvitations()
+            result = receive_message(ListBusinessInvitations_result)
+            return result.success unless result.success.nil?
+            raise result.userException unless result.userException.nil?
+            raise result.systemException unless result.systemException.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'listBusinessInvitations failed: unknown result')
+          end
+
+          def getAccountLimits(serviceLevel)
+            send_getAccountLimits(serviceLevel)
+            return recv_getAccountLimits()
+          end
+
+          def send_getAccountLimits(serviceLevel)
+            send_message('getAccountLimits', GetAccountLimits_args, :serviceLevel => serviceLevel)
+          end
+
+          def recv_getAccountLimits()
+            result = receive_message(GetAccountLimits_result)
+            return result.success unless result.success.nil?
+            raise result.userException unless result.userException.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getAccountLimits failed: unknown result')
           end
 
         end
@@ -231,19 +314,6 @@ module Evernote
             result = GetBootstrapInfo_result.new()
             result.success = @handler.getBootstrapInfo(args.locale)
             write_result(result, oprot, 'getBootstrapInfo', seqid)
-          end
-
-          def process_authenticate(seqid, iprot, oprot)
-            args = read_args(iprot, Authenticate_args)
-            result = Authenticate_result.new()
-            begin
-              result.success = @handler.authenticate(args.username, args.password, args.consumerKey, args.consumerSecret, args.supportsTwoFactor)
-            rescue ::Evernote::EDAM::Error::EDAMUserException => userException
-              result.userException = userException
-            rescue ::Evernote::EDAM::Error::EDAMSystemException => systemException
-              result.systemException = systemException
-            end
-            write_result(result, oprot, 'authenticate', seqid)
           end
 
           def process_authenticateLongSession(seqid, iprot, oprot)
@@ -298,19 +368,6 @@ module Evernote
             write_result(result, oprot, 'authenticateToBusiness', seqid)
           end
 
-          def process_refreshAuthentication(seqid, iprot, oprot)
-            args = read_args(iprot, RefreshAuthentication_args)
-            result = RefreshAuthentication_result.new()
-            begin
-              result.success = @handler.refreshAuthentication(args.authenticationToken)
-            rescue ::Evernote::EDAM::Error::EDAMUserException => userException
-              result.userException = userException
-            rescue ::Evernote::EDAM::Error::EDAMSystemException => systemException
-              result.systemException = systemException
-            end
-            write_result(result, oprot, 'refreshAuthentication', seqid)
-          end
-
           def process_getUser(seqid, iprot, oprot)
             args = read_args(iprot, GetUser_args)
             result = GetUser_result.new()
@@ -352,17 +409,110 @@ module Evernote
             write_result(result, oprot, 'getPremiumInfo', seqid)
           end
 
-          def process_getNoteStoreUrl(seqid, iprot, oprot)
-            args = read_args(iprot, GetNoteStoreUrl_args)
-            result = GetNoteStoreUrl_result.new()
+          def process_getSubscriptionInfo(seqid, iprot, oprot)
+            args = read_args(iprot, GetSubscriptionInfo_args)
+            result = GetSubscriptionInfo_result.new()
             begin
-              result.success = @handler.getNoteStoreUrl(args.authenticationToken)
+              result.success = @handler.getSubscriptionInfo(args.authenticationToken)
             rescue ::Evernote::EDAM::Error::EDAMUserException => userException
               result.userException = userException
             rescue ::Evernote::EDAM::Error::EDAMSystemException => systemException
               result.systemException = systemException
             end
-            write_result(result, oprot, 'getNoteStoreUrl', seqid)
+            write_result(result, oprot, 'getSubscriptionInfo', seqid)
+          end
+
+          def process_getUserUrls(seqid, iprot, oprot)
+            args = read_args(iprot, GetUserUrls_args)
+            result = GetUserUrls_result.new()
+            begin
+              result.success = @handler.getUserUrls(args.authenticationToken)
+            rescue ::Evernote::EDAM::Error::EDAMUserException => userException
+              result.userException = userException
+            rescue ::Evernote::EDAM::Error::EDAMSystemException => systemException
+              result.systemException = systemException
+            end
+            write_result(result, oprot, 'getUserUrls', seqid)
+          end
+
+          def process_inviteToBusiness(seqid, iprot, oprot)
+            args = read_args(iprot, InviteToBusiness_args)
+            result = InviteToBusiness_result.new()
+            begin
+              @handler.inviteToBusiness(args.authenticationToken, args.emailAddress)
+            rescue ::Evernote::EDAM::Error::EDAMUserException => userException
+              result.userException = userException
+            rescue ::Evernote::EDAM::Error::EDAMSystemException => systemException
+              result.systemException = systemException
+            end
+            write_result(result, oprot, 'inviteToBusiness', seqid)
+          end
+
+          def process_removeFromBusiness(seqid, iprot, oprot)
+            args = read_args(iprot, RemoveFromBusiness_args)
+            result = RemoveFromBusiness_result.new()
+            begin
+              @handler.removeFromBusiness(args.authenticationToken, args.emailAddress)
+            rescue ::Evernote::EDAM::Error::EDAMUserException => userException
+              result.userException = userException
+            rescue ::Evernote::EDAM::Error::EDAMSystemException => systemException
+              result.systemException = systemException
+            rescue ::Evernote::EDAM::Error::EDAMNotFoundException => notFoundException
+              result.notFoundException = notFoundException
+            end
+            write_result(result, oprot, 'removeFromBusiness', seqid)
+          end
+
+          def process_updateBusinessUserIdentifier(seqid, iprot, oprot)
+            args = read_args(iprot, UpdateBusinessUserIdentifier_args)
+            result = UpdateBusinessUserIdentifier_result.new()
+            begin
+              @handler.updateBusinessUserIdentifier(args.authenticationToken, args.oldEmailAddress, args.newEmailAddress)
+            rescue ::Evernote::EDAM::Error::EDAMUserException => userException
+              result.userException = userException
+            rescue ::Evernote::EDAM::Error::EDAMSystemException => systemException
+              result.systemException = systemException
+            rescue ::Evernote::EDAM::Error::EDAMNotFoundException => notFoundException
+              result.notFoundException = notFoundException
+            end
+            write_result(result, oprot, 'updateBusinessUserIdentifier', seqid)
+          end
+
+          def process_listBusinessUsers(seqid, iprot, oprot)
+            args = read_args(iprot, ListBusinessUsers_args)
+            result = ListBusinessUsers_result.new()
+            begin
+              result.success = @handler.listBusinessUsers(args.authenticationToken)
+            rescue ::Evernote::EDAM::Error::EDAMUserException => userException
+              result.userException = userException
+            rescue ::Evernote::EDAM::Error::EDAMSystemException => systemException
+              result.systemException = systemException
+            end
+            write_result(result, oprot, 'listBusinessUsers', seqid)
+          end
+
+          def process_listBusinessInvitations(seqid, iprot, oprot)
+            args = read_args(iprot, ListBusinessInvitations_args)
+            result = ListBusinessInvitations_result.new()
+            begin
+              result.success = @handler.listBusinessInvitations(args.authenticationToken, args.includeRequestedInvitations)
+            rescue ::Evernote::EDAM::Error::EDAMUserException => userException
+              result.userException = userException
+            rescue ::Evernote::EDAM::Error::EDAMSystemException => systemException
+              result.systemException = systemException
+            end
+            write_result(result, oprot, 'listBusinessInvitations', seqid)
+          end
+
+          def process_getAccountLimits(seqid, iprot, oprot)
+            args = read_args(iprot, GetAccountLimits_args)
+            result = GetAccountLimits_result.new()
+            begin
+              result.success = @handler.getAccountLimits(args.serviceLevel)
+            rescue ::Evernote::EDAM::Error::EDAMUserException => userException
+              result.userException = userException
+            end
+            write_result(result, oprot, 'getAccountLimits', seqid)
           end
 
         end
@@ -378,7 +528,7 @@ module Evernote
           FIELDS = {
             CLIENTNAME => {:type => ::Thrift::Types::STRING, :name => 'clientName'},
             EDAMVERSIONMAJOR => {:type => ::Thrift::Types::I16, :name => 'edamVersionMajor', :default => 1},
-            EDAMVERSIONMINOR => {:type => ::Thrift::Types::I16, :name => 'edamVersionMinor', :default => 25}
+            EDAMVERSIONMINOR => {:type => ::Thrift::Types::I16, :name => 'edamVersionMinor', :default => 28}
           }
 
           def struct_fields; FIELDS; end
@@ -427,50 +577,6 @@ module Evernote
 
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => ::Evernote::EDAM::UserStore::BootstrapInfo}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-          end
-
-          ::Thrift::Struct.generate_accessors self
-        end
-
-        class Authenticate_args
-          include ::Thrift::Struct, ::Thrift::Struct_Union
-          USERNAME = 1
-          PASSWORD = 2
-          CONSUMERKEY = 3
-          CONSUMERSECRET = 4
-          SUPPORTSTWOFACTOR = 5
-
-          FIELDS = {
-            USERNAME => {:type => ::Thrift::Types::STRING, :name => 'username'},
-            PASSWORD => {:type => ::Thrift::Types::STRING, :name => 'password'},
-            CONSUMERKEY => {:type => ::Thrift::Types::STRING, :name => 'consumerKey'},
-            CONSUMERSECRET => {:type => ::Thrift::Types::STRING, :name => 'consumerSecret'},
-            SUPPORTSTWOFACTOR => {:type => ::Thrift::Types::BOOL, :name => 'supportsTwoFactor'}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-          end
-
-          ::Thrift::Struct.generate_accessors self
-        end
-
-        class Authenticate_result
-          include ::Thrift::Struct, ::Thrift::Struct_Union
-          SUCCESS = 0
-          USEREXCEPTION = 1
-          SYSTEMEXCEPTION = 2
-
-          FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => ::Evernote::EDAM::UserStore::AuthenticationResult},
-            USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => ::Evernote::EDAM::Error::EDAMUserException},
-            SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => ::Evernote::EDAM::Error::EDAMSystemException}
           }
 
           def struct_fields; FIELDS; end
@@ -641,42 +747,6 @@ module Evernote
           ::Thrift::Struct.generate_accessors self
         end
 
-        class RefreshAuthentication_args
-          include ::Thrift::Struct, ::Thrift::Struct_Union
-          AUTHENTICATIONTOKEN = 1
-
-          FIELDS = {
-            AUTHENTICATIONTOKEN => {:type => ::Thrift::Types::STRING, :name => 'authenticationToken'}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-          end
-
-          ::Thrift::Struct.generate_accessors self
-        end
-
-        class RefreshAuthentication_result
-          include ::Thrift::Struct, ::Thrift::Struct_Union
-          SUCCESS = 0
-          USEREXCEPTION = 1
-          SYSTEMEXCEPTION = 2
-
-          FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => ::Evernote::EDAM::UserStore::AuthenticationResult},
-            USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => ::Evernote::EDAM::Error::EDAMUserException},
-            SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => ::Evernote::EDAM::Error::EDAMSystemException}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-          end
-
-          ::Thrift::Struct.generate_accessors self
-        end
-
         class GetUser_args
           include ::Thrift::Struct, ::Thrift::Struct_Union
           AUTHENTICATIONTOKEN = 1
@@ -787,7 +857,7 @@ module Evernote
           ::Thrift::Struct.generate_accessors self
         end
 
-        class GetNoteStoreUrl_args
+        class GetSubscriptionInfo_args
           include ::Thrift::Struct, ::Thrift::Struct_Union
           AUTHENTICATIONTOKEN = 1
 
@@ -803,16 +873,277 @@ module Evernote
           ::Thrift::Struct.generate_accessors self
         end
 
-        class GetNoteStoreUrl_result
+        class GetSubscriptionInfo_result
           include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           USEREXCEPTION = 1
           SYSTEMEXCEPTION = 2
 
           FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'},
+            SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => ::Evernote::EDAM::Type::SubscriptionInfo},
             USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => ::Evernote::EDAM::Error::EDAMUserException},
             SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => ::Evernote::EDAM::Error::EDAMSystemException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class GetUserUrls_args
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          AUTHENTICATIONTOKEN = 1
+
+          FIELDS = {
+            AUTHENTICATIONTOKEN => {:type => ::Thrift::Types::STRING, :name => 'authenticationToken'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class GetUserUrls_result
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          SUCCESS = 0
+          USEREXCEPTION = 1
+          SYSTEMEXCEPTION = 2
+
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => ::Evernote::EDAM::UserStore::UserUrls},
+            USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => ::Evernote::EDAM::Error::EDAMUserException},
+            SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => ::Evernote::EDAM::Error::EDAMSystemException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class InviteToBusiness_args
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          AUTHENTICATIONTOKEN = 1
+          EMAILADDRESS = 2
+
+          FIELDS = {
+            AUTHENTICATIONTOKEN => {:type => ::Thrift::Types::STRING, :name => 'authenticationToken'},
+            EMAILADDRESS => {:type => ::Thrift::Types::STRING, :name => 'emailAddress'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class InviteToBusiness_result
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          USEREXCEPTION = 1
+          SYSTEMEXCEPTION = 2
+
+          FIELDS = {
+            USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => ::Evernote::EDAM::Error::EDAMUserException},
+            SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => ::Evernote::EDAM::Error::EDAMSystemException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class RemoveFromBusiness_args
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          AUTHENTICATIONTOKEN = 1
+          EMAILADDRESS = 2
+
+          FIELDS = {
+            AUTHENTICATIONTOKEN => {:type => ::Thrift::Types::STRING, :name => 'authenticationToken'},
+            EMAILADDRESS => {:type => ::Thrift::Types::STRING, :name => 'emailAddress'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class RemoveFromBusiness_result
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          USEREXCEPTION = 1
+          SYSTEMEXCEPTION = 2
+          NOTFOUNDEXCEPTION = 3
+
+          FIELDS = {
+            USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => ::Evernote::EDAM::Error::EDAMUserException},
+            SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => ::Evernote::EDAM::Error::EDAMSystemException},
+            NOTFOUNDEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'notFoundException', :class => ::Evernote::EDAM::Error::EDAMNotFoundException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class UpdateBusinessUserIdentifier_args
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          AUTHENTICATIONTOKEN = 1
+          OLDEMAILADDRESS = 2
+          NEWEMAILADDRESS = 3
+
+          FIELDS = {
+            AUTHENTICATIONTOKEN => {:type => ::Thrift::Types::STRING, :name => 'authenticationToken'},
+            OLDEMAILADDRESS => {:type => ::Thrift::Types::STRING, :name => 'oldEmailAddress'},
+            NEWEMAILADDRESS => {:type => ::Thrift::Types::STRING, :name => 'newEmailAddress'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class UpdateBusinessUserIdentifier_result
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          USEREXCEPTION = 1
+          SYSTEMEXCEPTION = 2
+          NOTFOUNDEXCEPTION = 3
+
+          FIELDS = {
+            USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => ::Evernote::EDAM::Error::EDAMUserException},
+            SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => ::Evernote::EDAM::Error::EDAMSystemException},
+            NOTFOUNDEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'notFoundException', :class => ::Evernote::EDAM::Error::EDAMNotFoundException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class ListBusinessUsers_args
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          AUTHENTICATIONTOKEN = 1
+
+          FIELDS = {
+            AUTHENTICATIONTOKEN => {:type => ::Thrift::Types::STRING, :name => 'authenticationToken'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class ListBusinessUsers_result
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          SUCCESS = 0
+          USEREXCEPTION = 1
+          SYSTEMEXCEPTION = 2
+
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::Type::UserProfile}},
+            USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => ::Evernote::EDAM::Error::EDAMUserException},
+            SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => ::Evernote::EDAM::Error::EDAMSystemException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class ListBusinessInvitations_args
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          AUTHENTICATIONTOKEN = 1
+          INCLUDEREQUESTEDINVITATIONS = 2
+
+          FIELDS = {
+            AUTHENTICATIONTOKEN => {:type => ::Thrift::Types::STRING, :name => 'authenticationToken'},
+            INCLUDEREQUESTEDINVITATIONS => {:type => ::Thrift::Types::BOOL, :name => 'includeRequestedInvitations'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class ListBusinessInvitations_result
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          SUCCESS = 0
+          USEREXCEPTION = 1
+          SYSTEMEXCEPTION = 2
+
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::Type::BusinessInvitation}},
+            USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => ::Evernote::EDAM::Error::EDAMUserException},
+            SYSTEMEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'systemException', :class => ::Evernote::EDAM::Error::EDAMSystemException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class GetAccountLimits_args
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          SERVICELEVEL = 1
+
+          FIELDS = {
+            SERVICELEVEL => {:type => ::Thrift::Types::I32, :name => 'serviceLevel', :enum_class => ::Evernote::EDAM::Type::ServiceLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            unless @serviceLevel.nil? || ::Evernote::EDAM::Type::ServiceLevel::VALID_VALUES.include?(@serviceLevel)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field serviceLevel!')
+            end
+          end
+
+          ::Thrift::Struct.generate_accessors self
+        end
+
+        class GetAccountLimits_result
+          include ::Thrift::Struct, ::Thrift::Struct_Union
+          SUCCESS = 0
+          USEREXCEPTION = 1
+
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => ::Evernote::EDAM::Type::AccountLimits},
+            USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => ::Evernote::EDAM::Error::EDAMUserException}
           }
 
           def struct_fields; FIELDS; end
