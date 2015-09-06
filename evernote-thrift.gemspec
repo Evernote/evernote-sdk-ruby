@@ -6,7 +6,7 @@ require 'evernote-thrift'
 
 majorv = Evernote::EDAM::UserStore::EDAM_VERSION_MAJOR
 minorv = Evernote::EDAM::UserStore::EDAM_VERSION_MINOR
-rev = 1
+rev = 0
 version = Gem::Version.new("#{majorv}.#{minorv}.#{rev}").version
 
 Gem::Specification.new do |s|
