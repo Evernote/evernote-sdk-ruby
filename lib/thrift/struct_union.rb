@@ -33,12 +33,11 @@ module Thrift
     end
 
     def sorted_field_ids
-      sorted_field_ids = self.class.instance_variable_get(:@sorted_field_ids)
-      unless sorted_field_ids
+      unless self.class.instance_variable_defined?(:@sorted_field_ids)
         sorted_field_ids = struct_fields.keys.sort
         self.class.instance_variable_set(:@sorted_field_ids, sorted_field_ids)
       end
-      sorted_field_ids
+      self.class.instance_variable_get(:@sorted_field_ids)
     end
 
     def each_field
