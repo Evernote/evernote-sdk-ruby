@@ -55,8 +55,7 @@ module Thrift
     end
 
     def fields_with_default_values
-      fields_with_default_values = self.class.instance_variable_get(:@fields_with_default_values)
-      unless fields_with_default_values
+      unless self.class.instance_variable_defined?(:@fields_with_default_values)
         fields_with_default_values = {}
         struct_fields.each do |fid, field_def|
           unless field_def[:default].nil?
@@ -65,7 +64,7 @@ module Thrift
         end
         self.class.instance_variable_set(:@fields_with_default_values, fields_with_default_values)
       end
-      fields_with_default_values
+      self.class.instance_variable_get(:@fields_with_default_values)
     end
     
     def inspect(skip_optional_nulls = true)

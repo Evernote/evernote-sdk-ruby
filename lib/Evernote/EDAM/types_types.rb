@@ -2097,10 +2097,10 @@ module Evernote
         def struct_fields; FIELDS; end
 
         def validate
-          unless @updateWhichSharedNotebookRestrictions.nil? || ::Evernote::EDAM::Type::SharedNotebookInstanceRestrictions::VALID_VALUES.include?(@updateWhichSharedNotebookRestrictions)
+          if instance_variable_defined?(:@updateWhichSharedNotebookRestrictions) and not ::Evernote::EDAM::Type::SharedNotebookInstanceRestrictions::VALID_VALUES.include?(@updateWhichSharedNotebookRestrictions)
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field updateWhichSharedNotebookRestrictions!')
           end
-          unless @expungeWhichSharedNotebookRestrictions.nil? || ::Evernote::EDAM::Type::SharedNotebookInstanceRestrictions::VALID_VALUES.include?(@expungeWhichSharedNotebookRestrictions)
+          if instance_variable_defined?(:@expungeWhichSharedNotebookRestrictions) and not ::Evernote::EDAM::Type::SharedNotebookInstanceRestrictions::VALID_VALUES.include?(@expungeWhichSharedNotebookRestrictions)
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field expungeWhichSharedNotebookRestrictions!')
           end
         end
