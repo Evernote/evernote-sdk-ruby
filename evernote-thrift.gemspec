@@ -6,7 +6,7 @@ require 'evernote-thrift'
 
 majorv = Evernote::EDAM::UserStore::EDAM_VERSION_MAJOR
 minorv = Evernote::EDAM::UserStore::EDAM_VERSION_MINOR
-rev = 2
+rev = 3
 version = Gem::Version.new("#{majorv}.#{minorv}.#{rev}").version
 
 Gem::Specification.new do |s|
@@ -27,6 +27,6 @@ Gem::Specification.new do |s|
   s.rubygems_version = version
   s.summary = %q{This SDK contains wrapper code used to call the Evernote Cloud API from Ruby.}
 
-  s.add_development_dependency 'rspec'
-  s.add_development_dependency 'fakeweb', '~> 1.3.0'
+  s.add_development_dependency 'rspec', '~> 3.6'
+  s.add_development_dependency 'fakeweb', '~> 1.3'
 end
