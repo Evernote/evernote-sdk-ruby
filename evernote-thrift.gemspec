@@ -6,7 +6,6 @@ require 'evernote-thrift'
 
 majorv = Evernote::EDAM::UserStore::EDAM_VERSION_MAJOR
 minorv = Evernote::EDAM::UserStore::EDAM_VERSION_MINOR
-rev = 0
 version = Gem::Version.new("#{majorv}.#{minorv}.#{rev}").version
 
 Gem::Specification.new do |s|
@@ -20,6 +19,7 @@ Gem::Specification.new do |s|
   s.files = ["LICENSE", "NOTICE", "README.md", "APACHE-LICENSE-2.0.txt", "evernote-thrift.gemspec"] + Dir.glob('{lib}/**/*')
   s.has_rdoc = false
   s.homepage = %q{http://github.com/evernote/evernote-sdk-ruby}
+  s.license = 'BSD 2-Clause'
   s.rdoc_options = ["--inline-source", "--charset=UTF-8"]
   s.require_paths = ["lib"]
   s.rubyforge_project = %q{evernote-sdk-ruby}
