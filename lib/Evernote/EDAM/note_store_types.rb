@@ -14,55 +14,119 @@ require 'limits_types'
 module Evernote
   module EDAM
     module NoteStore
-      #  This structure encapsulates the information about the state of the
-#  user's account for the purpose of "state based" synchronization.
+      module UserSetting
+        RECEIVE_REMINDER_EMAIL = 1
+        TIMEZONE = 2
+        VALUE_MAP = {1 => "RECEIVE_REMINDER_EMAIL", 2 => "TIMEZONE"}
+        VALID_VALUES = Set.new([RECEIVE_REMINDER_EMAIL, TIMEZONE]).freeze
+      end
+
+      module ShareRelationshipPrivilegeLevel
+        READ_NOTEBOOK = 0
+        READ_NOTEBOOK_PLUS_ACTIVITY = 10
+        MODIFY_NOTEBOOK_PLUS_ACTIVITY = 20
+        FULL_ACCESS = 30
+        VALUE_MAP = {0 => "READ_NOTEBOOK", 10 => "READ_NOTEBOOK_PLUS_ACTIVITY", 20 => "MODIFY_NOTEBOOK_PLUS_ACTIVITY", 30 => "FULL_ACCESS"}
+        VALID_VALUES = Set.new([READ_NOTEBOOK, READ_NOTEBOOK_PLUS_ACTIVITY, MODIFY_NOTEBOOK_PLUS_ACTIVITY, FULL_ACCESS]).freeze
+      end
+
+      # This structure encapsulates the information about the state of the
+# user's account for the purpose of "state based" synchronization.
 # <dl>
-#  <dt>currentTime</dt>
-#    <dd>
-#    The server's current date and time.
-#    </dd>
+# <dt>currentTime</dt>
+#   <dd>
+#   The server's current date and time.
+#   </dd>
 # 
-#  <dt>fullSyncBefore</dt>
-#    <dd>
-#    The cutoff date and time for client caches to be
-#    updated via incremental synchronization.  Any clients that were last
-#    synched with the server before this date/time must do a full resync of all
-#    objects.  This cutoff point will change over time as archival data is
-#    deleted or special circumstances on the service require resynchronization.
-#    </dd>
+# <dt>fullSyncBefore</dt>
+#   <dd>
+#   The cutoff date and time for client caches to be
+#   updated via incremental synchronization.  Any clients that were last
+#   synched with the server before this date/time must do a full resync of all
+#   objects.  This cutoff point will change over time as archival data is
+#   deleted or special circumstances on the service require resynchronization.
+#   </dd>
 # 
-#  <dt>updateCount</dt>
-#    <dd>
-#    Indicates the total number of transactions that have
-#    been committed within the account.  This reflects (for example) the
-#    number of discrete additions or modifications that have been made to
-#    the data in this account (tags, notes, resources, etc.).
-#    This number is the "high water mark" for Update Sequence Numbers (USN)
-#    within the account.
-#    </dd>
+# <dt>updateCount</dt>
+#   <dd>
+#   Indicates the total number of transactions that have
+#   been committed within the account.  This reflects (for example) the
+#   number of discrete additions or modifications that have been made to
+#   the data in this account (tags, notes, resources, etc.).
+#   This number is the "high water mark" for Update Sequence Numbers (USN)
+#   within the account.
+#   </dd>
 # 
-#  <dt>uploaded</dt>
-#    <dd>
-#    The total number of bytes that have been uploaded to
-#    this account in the current monthly period.  This can be compared against
-#    Accounting.uploadLimit (from the UserStore) to determine how close the user
-#    is to their monthly upload limit.
-#    This value may not be present if the SyncState has been retrieved by
-#    a caller that only has read access to the account.
-#    </dd>
-#  </dl>
+# <dt>uploaded</dt>
+#   <dd>
+#   The total number of bytes that have been uploaded to
+#   this account in the current monthly period.  This can be compared against
+#   Accounting.uploadLimit (from the UserStore) to determine how close the user
+#   is to their monthly upload limit.
+#   This value may not be present if the SyncState has been retrieved by
+#   a caller that only has read access to the account.
+#   </dd>
+# 
+# <dt>userLastUpdated</dt>
+#   <dd>
+#   The last time when a user's account level information was changed. This value
+#   is the latest time when a modification was made to any of the following:
+#   accounting information (billing, quota, premium status, etc.), user attributes
+#   and business user information (business name, business user attributes, etc.) if
+#   the user is in a business.
+#   Clients who need to maintain account information about a User should watch this
+#   field for updates rather than polling UserStore.getUser for updates. Here is the
+#   basic flow that clients should follow:
+#   <ol>
+#     <li>Call NoteStore.getSyncState to retrieve the SyncState object</li>
+#     <li>Compare SyncState.userLastUpdated to previously stored value:
+#         if (SyncState.userLastUpdated > previousValue)
+#           call UserStore.getUser to get the latest User object;
+#         else
+#           do nothing;</li>
+#     <li>Update previousValue = SyncState.userLastUpdated</li>
+#   </ol>
+#   </dd>
+# 
+# <dt>userMaxMessageEventId</dt>
+#   <dd>
+#   The greatest MessageEventID for this user's account. Clients that do a full
+#   sync should store this value locally and compare their local copy to the
+#   value returned by getSyncState to determine if they need to sync with
+#   MessageStore. This value will be omitted if the user has never sent or
+#   received a message.
+#   </dd>
+# </dl>
+# 
+# <dt>businessSummaryUpdated</dt>
+#   <dd>
+#   The date when the user's Business Summary recommendations were last
+#   updated. This is set only if the SyncState being requested is for a
+#   user who is currently a member of a business and has had business
+#   summary recommendations generated at least once. It is not set for calls
+#   made using a business authentication token. Depending on server-side
+#   cache status it may occasionally be unset even if these criteria are met.
+#   The Business Summary should be fetched by clients only if the date
+#   reported here is later than than the date of the last fetch. INTERNAL
+#   ONLY!
+#   </dd>
+# </dl>
       class SyncState
         include ::Thrift::Struct, ::Thrift::Struct_Union
         CURRENTTIME = 1
         FULLSYNCBEFORE = 2
         UPDATECOUNT = 3
         UPLOADED = 4
+        USERLASTUPDATED = 5
+        USERMAXMESSAGEEVENTID = 6
 
         FIELDS = {
           CURRENTTIME => {:type => ::Thrift::Types::I64, :name => 'currentTime'},
           FULLSYNCBEFORE => {:type => ::Thrift::Types::I64, :name => 'fullSyncBefore'},
           UPDATECOUNT => {:type => ::Thrift::Types::I32, :name => 'updateCount'},
-          UPLOADED => {:type => ::Thrift::Types::I64, :name => 'uploaded', :optional => true}
+          UPLOADED => {:type => ::Thrift::Types::I64, :name => 'uploaded', :optional => true},
+          USERLASTUPDATED => {:type => ::Thrift::Types::I64, :name => 'userLastUpdated', :optional => true},
+          USERMAXMESSAGEEVENTID => {:type => ::Thrift::Types::I64, :name => 'userMaxMessageEventId', :optional => true}
         }
 
         def struct_fields; FIELDS; end
@@ -119,8 +183,7 @@ module Evernote
 #  <dt>notebooks</dt>
 #    <dd>
 #    If present, this is a list of non-expunged notebooks that
-#    have a USN in this chunk.  This will include notebooks that are "deleted"
-#    but not expunged (i.e. in the trash).
+#    have a USN in this chunk.
 #    </dd>
 # 
 #  <dt>tags</dt>
@@ -179,6 +242,12 @@ module Evernote
 #    <dd>
 #    If present, the GUIDs of all of the LinkedNotebooks
 #    that were permanently expunged in this chunk.
+#    </dd>
+# 
+#  <dt>Preferences</dt>
+#    <dd>
+#    If present, this is a Preferences structure that has
+#    a USN in this chunk. INTERNAL ONLY!
 #    </dd>
 #  </dl>
       class SyncChunk
@@ -310,11 +379,56 @@ module Evernote
 #    only the keysOnly field will be filled in.
 #    </dd>
 # 
+#  <dt>includePreferences</dt>
+#    <dd>
+#    If true, then the server will include the "preferences" field.
+#    INTERNAL ONLY!
+#    </dd>
+# 
+#  <dt>omitSharedNotebooks<dt>
+#    <dd>
+#    Normally, if 'includeNotebooks' is true, then the SyncChunks will
+#    include Notebooks that may include a set of SharedNotebook
+#    invitations via Notebook.sharedNotebookIds and Notebook.sharedNotebooks.
+#    However, if omitSharedNotebooks is set to true, then the Notebooks
+#    will omit those two fields and leave them unset. This should be used
+#    by clients who want to know their own set of Notebooks (and the
+#    associated permissions via Notebook.recipientSettings), and who
+#    do not need to know the full set of other people who can also see
+#    that same notebook.
+#    </dd>
+# 
 #  <dt>requireNoteContentClass</dt>
 #    <dd>
 #    If set, then only send notes whose content class matches this value.
 #    The value can be a literal match or, if the last character is an
 #    asterisk, a prefix match.
+#    </dd>
+# 
+#  <dt>notebookGuids</dt>
+#    <dd>
+#    If set, then restrict the returned notebooks, notes, and
+#    resources to those associated with one of the notebooks whose
+#    GUID is provided in this list.  If not set, then no filtering on
+#    notebook GUID will be performed.  If you set this field, you may
+#    not also set includeExpunged else an EDAMUserException with an
+#    error code of DATA_CONFLICT will be thrown.  You only need to set
+#    this field if you want to restrict the returned entities more
+#    than what your authentication token allows you to access.  For
+#    example, there is no need to set this field for single notebook
+#    tokens such as for shared notebooks.  You can use this field to
+#    synchronize a newly discovered business notebook while
+#    incrementally synchronizing a business account, in which case you
+#    will only need to consider setting includeNotes,
+#    includeNotebooks, includeNoteAttributes, includeNoteResources,
+#    and maybe some of the "FullMap" fields.
+#    </dd>
+# 
+#  <dt>includeSharedNotes</dt>
+#    <dd>
+#    If true, then the service will include the sharedNotes field on all
+#    notes that are in SyncChunk.notes. If 'includeNotes' is false, then
+#    this will have no effect.
 #    </dd>
 #  </dl>
       class SyncChunkFilter
@@ -331,7 +445,10 @@ module Evernote
         INCLUDENOTEAPPLICATIONDATAFULLMAP = 10
         INCLUDERESOURCEAPPLICATIONDATAFULLMAP = 12
         INCLUDENOTERESOURCEAPPLICATIONDATAFULLMAP = 13
+        INCLUDEDSHAREDNOTES = 17
+        OMITSHAREDNOTEBOOKS = 16
         REQUIRENOTECONTENTCLASS = 11
+        NOTEBOOKGUIDS = 15
 
         FIELDS = {
           INCLUDENOTES => {:type => ::Thrift::Types::BOOL, :name => 'includeNotes', :optional => true},
@@ -346,7 +463,10 @@ module Evernote
           INCLUDENOTEAPPLICATIONDATAFULLMAP => {:type => ::Thrift::Types::BOOL, :name => 'includeNoteApplicationDataFullMap', :optional => true},
           INCLUDERESOURCEAPPLICATIONDATAFULLMAP => {:type => ::Thrift::Types::BOOL, :name => 'includeResourceApplicationDataFullMap', :optional => true},
           INCLUDENOTERESOURCEAPPLICATIONDATAFULLMAP => {:type => ::Thrift::Types::BOOL, :name => 'includeNoteResourceApplicationDataFullMap', :optional => true},
-          REQUIRENOTECONTENTCLASS => {:type => ::Thrift::Types::STRING, :name => 'requireNoteContentClass', :optional => true}
+          INCLUDEDSHAREDNOTES => {:type => ::Thrift::Types::BOOL, :name => 'includedSharedNotes', :optional => true},
+          OMITSHAREDNOTEBOOKS => {:type => ::Thrift::Types::BOOL, :name => 'omitSharedNotebooks', :optional => true},
+          REQUIRENOTECONTENTCLASS => {:type => ::Thrift::Types::STRING, :name => 'requireNoteContentClass', :optional => true},
+          NOTEBOOKGUIDS => {:type => ::Thrift::Types::SET, :name => 'notebookGuids', :element => {:type => ::Thrift::Types::STRING}, :optional => true}
         }
 
         def struct_fields; FIELDS; end
@@ -417,6 +537,13 @@ module Evernote
 #    as a wish list, not a requirement.
 #    Accepts the full search grammar documented in the Evernote API Overview.
 #    </dd>
+# 
+#  <dt>includeAllReadableNotebooks</dt>
+#    <dd>
+#    If true, then the search will include all business notebooks that are readable
+#    by the user. A business authentication token must be supplied for
+#    this option to take effect when calling search APIs.
+#    </dd>
 #  </dl>
       class NoteFilter
         include ::Thrift::Struct, ::Thrift::Struct_Union
@@ -428,6 +555,7 @@ module Evernote
         TIMEZONE = 6
         INACTIVE = 7
         EMPHASIZED = 8
+        INCLUDEALLREADABLENOTEBOOKS = 9
 
         FIELDS = {
           ORDER => {:type => ::Thrift::Types::I32, :name => 'order', :optional => true},
@@ -437,7 +565,8 @@ module Evernote
           TAGGUIDS => {:type => ::Thrift::Types::LIST, :name => 'tagGuids', :element => {:type => ::Thrift::Types::STRING}, :optional => true},
           TIMEZONE => {:type => ::Thrift::Types::STRING, :name => 'timeZone', :optional => true},
           INACTIVE => {:type => ::Thrift::Types::BOOL, :name => 'inactive', :optional => true},
-          EMPHASIZED => {:type => ::Thrift::Types::STRING, :name => 'emphasized', :optional => true}
+          EMPHASIZED => {:type => ::Thrift::Types::STRING, :name => 'emphasized', :optional => true},
+          INCLUDEALLREADABLENOTEBOOKS => {:type => ::Thrift::Types::BOOL, :name => 'includeAllReadableNotebooks', :optional => true}
         }
 
         def struct_fields; FIELDS; end
@@ -757,6 +886,57 @@ module Evernote
         ::Thrift::Struct.generate_accessors self
       end
 
+      # This structure is provided to the getNoteWithResultSpec function to specify the subset of
+# fields that should be included in the Note that is returned. This allows clients to request
+# the minimum set of information that they require when retrieving a note, reducing the size
+# of the response and improving the response time.
+# 
+# If one of the fields in this spec is not set, then it will be treated as 'false' by the service,
+# so that the default behavior is to include none of the fields below in the Note.
+# 
+# <dl>
+#   <dt>withContent</dt>
+#   <dd>If true, the Note.content field will be populated with the note's ENML contents.</dd>
+# 
+#   <dt>withResourcesData</dt>
+#   <dd>If true, any Resource elements will include the binary contents of their 'data' field's
+#     body.</dd>
+# 
+#   <dt>withResourcesRecognition</dt>
+#   <dd>If true, any Resource elements will include the binary contents of their 'recognition'
+#     field's body if recognition data is available.</dd>
+# 
+#   <dt>withResourcesAlternateData</dt>
+#   <dd>If true, any Resource elements will include the binary contents of their 'alternateData'
+#     field's body, if an alternate form is available.</dd>
+# 
+#   <dt>withSharedNotes</dt>
+#   <dd>If true, the Note.sharedNotes field will be populated with the note's shares.</dd>
+# </dl>
+      class NoteResultSpec
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        INCLUDECONTENT = 1
+        INCLUDERESOURCESDATA = 2
+        INCLUDERESOURCESRECOGNITION = 3
+        INCLUDERESOURCESALTERNATEDATA = 4
+        INCLUDESHAREDNOTES = 5
+
+        FIELDS = {
+          INCLUDECONTENT => {:type => ::Thrift::Types::BOOL, :name => 'includeContent', :optional => true},
+          INCLUDERESOURCESDATA => {:type => ::Thrift::Types::BOOL, :name => 'includeResourcesData', :optional => true},
+          INCLUDERESOURCESRECOGNITION => {:type => ::Thrift::Types::BOOL, :name => 'includeResourcesRecognition', :optional => true},
+          INCLUDERESOURCESALTERNATEDATA => {:type => ::Thrift::Types::BOOL, :name => 'includeResourcesAlternateData', :optional => true},
+          INCLUDESHAREDNOTES => {:type => ::Thrift::Types::BOOL, :name => 'includeSharedNotes', :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
       # Parameters that must be given to the NoteStore emailNote call. These allow
 # the caller to specify the note to send, the recipient addresses, etc.
 # 
@@ -851,12 +1031,17 @@ module Evernote
 #  <dt>saved</dt>
 #  <dd>
 #    A timestamp that holds the date and time when this version of the note
-#    was backed up by Evernote's servers.  This
+#    was backed up by Evernote's servers.
 #  </dd>
 #  <dt>title</dt>
 #  <dd>
 #    The title of the note when this particular version was saved.  (The
 #    current title of the note may differ from this value.)
+#  </dd>
+#  <dt>lastEditorId</dt>
+#  <dd>
+#    The ID of the user who made the change to this version of the note. This will be
+#    unset if the note version was edited by the owner of the account.
 #  </dd>
 # </dl>
       class NoteVersionId
@@ -865,12 +1050,14 @@ module Evernote
         UPDATED = 2
         SAVED = 3
         TITLE = 4
+        LASTEDITORID = 5
 
         FIELDS = {
           UPDATESEQUENCENUM => {:type => ::Thrift::Types::I32, :name => 'updateSequenceNum'},
           UPDATED => {:type => ::Thrift::Types::I64, :name => 'updated'},
           SAVED => {:type => ::Thrift::Types::I64, :name => 'saved'},
-          TITLE => {:type => ::Thrift::Types::STRING, :name => 'title'}
+          TITLE => {:type => ::Thrift::Types::STRING, :name => 'title'},
+          LASTEDITORID => {:type => ::Thrift::Types::I32, :name => 'lastEditorId', :optional => true}
         }
 
         def struct_fields; FIELDS; end
@@ -880,43 +1067,6 @@ module Evernote
           raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field updated is unset!') unless @updated
           raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field saved is unset!') unless @saved
           raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field title is unset!') unless @title
-        end
-
-        ::Thrift::Struct.generate_accessors self
-      end
-
-      # This structure is passed from clients to the Evernote service when they wish
-# to relay coarse-grained usage metrics to the service to help improve
-# products.
-# 
-# <dl>
-#  <dt>sessions</dt>
-#  <dd>
-#    This field contains a count of the number of usage "sessions" that have
-#    occurred with this client which have not previously been reported to
-#    the service.
-#    A "session" is defined as one of the 96 fifteen-minute intervals of the
-#    day when someone used Evernote's interface at least once.
-#    So if a user interacts with an Evernote client at 12:18, 12:24, and 12:36,
-#    and then the client synchronizes at 12:39, it would report that there were
-#    two previously-unreported sessions (one session for the 12:15-12:30 time
-#    period, and one for the 12:30-12:45 period).
-#    If the user used Evernote again at 12:41 and synchronized at 12:43, it
-#    would not report any new sessions, because the 12:30-12:45 session had
-#    already been reported.
-#  </dd>
-# </dl>
-      class ClientUsageMetrics
-        include ::Thrift::Struct, ::Thrift::Struct_Union
-        SESSIONS = 1
-
-        FIELDS = {
-          SESSIONS => {:type => ::Thrift::Types::I32, :name => 'sessions', :optional => true}
-        }
-
-        def struct_fields; FIELDS; end
-
-        def validate
         end
 
         ::Thrift::Struct.generate_accessors self
@@ -950,6 +1100,24 @@ module Evernote
 # <dd>A URI string specifying a reference entity, around which "relatedness"
 #     should be based. This can be an URL pointing to a web page, for example.
 # </dd>
+# 
+# <dt>context</dt>
+# <dd>Specifies the context to consider when determining related results.
+#     Clients must leave this value unset unless they wish to explicitly specify a known
+#     non-default context.
+# </dd>
+# 
+# <dt>cacheKey</dt>
+# <dd>If set and non-empty, this is an indicator for the server whether it is actually
+#     necessary to perform a new findRelated call at all. Cache Keys are opaque strings
+#     which are returned by the server as part of "RelatedResult" in response
+#     to a "NoteStore.findRelated" query. Cache Keys are inherently query specific.
+# 
+#     If set to an empty string, this indicates that the server should generate a cache
+#     key in the response as part of "RelatedResult".
+# 
+#     If not set, the server will not attempt to generate a cache key at all.
+# </dd>
 # </dl>
       class RelatedQuery
         include ::Thrift::Struct, ::Thrift::Struct_Union
@@ -957,12 +1125,16 @@ module Evernote
         PLAINTEXT = 2
         FILTER = 3
         REFERENCEURI = 4
+        CONTEXT = 5
+        CACHEKEY = 6
 
         FIELDS = {
           NOTEGUID => {:type => ::Thrift::Types::STRING, :name => 'noteGuid', :optional => true},
           PLAINTEXT => {:type => ::Thrift::Types::STRING, :name => 'plainText', :optional => true},
           FILTER => {:type => ::Thrift::Types::STRUCT, :name => 'filter', :class => ::Evernote::EDAM::NoteStore::NoteFilter, :optional => true},
-          REFERENCEURI => {:type => ::Thrift::Types::STRING, :name => 'referenceUri', :optional => true}
+          REFERENCEURI => {:type => ::Thrift::Types::STRING, :name => 'referenceUri', :optional => true},
+          CONTEXT => {:type => ::Thrift::Types::STRING, :name => 'context', :optional => true},
+          CACHEKEY => {:type => ::Thrift::Types::STRING, :name => 'cacheKey', :optional => true}
         }
 
         def struct_fields; FIELDS; end
@@ -991,7 +1163,6 @@ module Evernote
 # <dt>tags</dt>
 # <dd>If tags have been requested to be included, this will be the list
 #     of tags.</dd>
-# </dl>
 # 
 # <dt>containingNotebooks</dt>
 # <dd>If <code>includeContainingNotebooks</code> is set to <code>true</code>
@@ -999,7 +1170,65 @@ module Evernote
 #     to which the returned related notes belong. The notebooks in this
 #     list will occur once per notebook GUID and are represented as
 #     NotebookDescriptor objects.</dd>
-# </dl>
+# 
+# <dt>debugInfo</dt>
+# <dd>If <code>includeDebugInfo</code> in RelatedResultSpec is set to
+#     <code>true</code>, this field may contain debug information
+#     if the service decides to do so.</dd>
+# 
+# <dt>experts</dt>
+# <dd>If experts have been requested to be included, this will return
+#  a list of users within your business who have knowledge about the specified query.
+# </dd>
+# 
+# <dt>relatedContent</dt>
+# <dd>If related content has been requested to be included, this will be the list of
+#  related content snippets.
+# </dd>
+# 
+# <dt>cacheKey</dt>
+# <dd>If set and non-empty, this cache key may be used in subsequent
+#     "NoteStore.findRelated" calls (via "RelatedQuery") to re-use previous
+#     responses that were cached on the client-side, instead of actually performing
+#     another search.
+# 
+#     If set to an empty string, this indicates that the server could not determine
+#     a specific key for this response, but the client should nevertheless remove
+#     any previously cached result for this request.
+# 
+#     If unset/null, it is up to the client whether to re-use cached results or to
+#     use the server's response.
+# 
+#     If set to the exact non-empty cache key that was specified in
+#     "RelatedQuery.cacheKey", this indicates that the server decided that cached results
+#     could be reused.
+# 
+#     Depending on the cache key specified in the query, the "RelatedResult" may only be
+#     partially filled. For each set field, the client should replace the corresponding
+#     part in the previously cached result with the new partial result.
+#  
+#     For example, for a specific query that has both "RelatedResultSpec.maxNotes" and
+#     "RelatedResultSpec.maxRelatedContent" set to positive values, the server may decide
+#     that the previously requested and cached <em>Related Content</em> are unchanged,
+#     but new results for <em>Related Notes</em> are available. The
+#     response will have a new cache key and have "RelatedResult.notes" set, but have
+#     "RelatedResult.relatedContent" unset (not just empty, but really unset).
+# 
+#     In this situation, the client should replace any cached notes with the newly
+#     returned "RelatedResult.notes", but it can re-use the previously cached entries for
+#     "RelatedResult.relatedContent". List fields that are set, but empty indicate that
+#     no results could be found; the cache should be updated correspondingly.
+# </dd>
+# 
+# <dt>cacheExpires</dt>
+# <dd> If set, clients should reuse this response for any situations where the same input
+#      parameters are applicable for up to this many seconds after receiving this result.
+# 
+#      After this time has passed, the client may request a new result from the service,
+#      but it should supply the stored cacheKey to the service when checking for an
+#      update.
+# </dd>
+# 
 # </dl>
       class RelatedResult
         include ::Thrift::Struct, ::Thrift::Struct_Union
@@ -1007,12 +1236,22 @@ module Evernote
         NOTEBOOKS = 2
         TAGS = 3
         CONTAININGNOTEBOOKS = 4
+        DEBUGINFO = 5
+        EXPERTS = 6
+        RELATEDCONTENT = 7
+        CACHEKEY = 8
+        CACHEEXPIRES = 9
 
         FIELDS = {
           NOTES => {:type => ::Thrift::Types::LIST, :name => 'notes', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::Type::Note}, :optional => true},
           NOTEBOOKS => {:type => ::Thrift::Types::LIST, :name => 'notebooks', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::Type::Notebook}, :optional => true},
           TAGS => {:type => ::Thrift::Types::LIST, :name => 'tags', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::Type::Tag}, :optional => true},
-          CONTAININGNOTEBOOKS => {:type => ::Thrift::Types::LIST, :name => 'containingNotebooks', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::Type::NotebookDescriptor}, :optional => true}
+          CONTAININGNOTEBOOKS => {:type => ::Thrift::Types::LIST, :name => 'containingNotebooks', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::Type::NotebookDescriptor}, :optional => true},
+          DEBUGINFO => {:type => ::Thrift::Types::STRING, :name => 'debugInfo', :optional => true},
+          EXPERTS => {:type => ::Thrift::Types::LIST, :name => 'experts', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::Type::UserProfile}, :optional => true},
+          RELATEDCONTENT => {:type => ::Thrift::Types::LIST, :name => 'relatedContent', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::Type::RelatedContent}, :optional => true},
+          CACHEKEY => {:type => ::Thrift::Types::STRING, :name => 'cacheKey', :optional => true},
+          CACHEEXPIRES => {:type => ::Thrift::Types::I32, :name => 'cacheExpires', :optional => true}
         }
 
         def struct_fields; FIELDS; end
@@ -1060,6 +1299,27 @@ module Evernote
 #     in the RelatedResult, which will contain the list of notebooks to
 #     to which the returned related notes belong.</dd>
 # </dl>
+# 
+# <dt>includeDebugInfo</dt>
+# <dd>If set to <code>true</code>, indicate that debug information should
+#     be returned in the 'debugInfo' field of RelatedResult. Note that the call may
+#     be slower if this flag is set.</dd>
+# 
+# <dt>maxExperts</dt>
+# <dd>This can only be used when making a findRelated call against a business.
+#  Find users within your business who have knowledge about the specified query.
+#  No more than this many users will be returned. Any value greater than
+#  EDAM_RELATED_MAX_EXPERTS will be silently capped.
+# </dd>
+# 
+# <dt>maxRelatedContent</dt>
+# <dd>Return snippets of related content that is related to the query, but no more than
+#  this many. Any value greater than EDAM_RELATED_MAX_RELATED_CONTENT will be silently
+#  capped. If you do not set this field, then no related content will be returned.</dd>
+# </dl>
+# 
+# <dt>relatedContentTypes</dt>
+# <dd>Specifies the types of Related Content that should be returned.</dd>
 # </dl>
       class RelatedResultSpec
         include ::Thrift::Struct, ::Thrift::Struct_Union
@@ -1068,13 +1328,829 @@ module Evernote
         MAXTAGS = 3
         WRITABLENOTEBOOKSONLY = 4
         INCLUDECONTAININGNOTEBOOKS = 5
+        INCLUDEDEBUGINFO = 6
+        MAXEXPERTS = 7
+        MAXRELATEDCONTENT = 8
+        RELATEDCONTENTTYPES = 9
 
         FIELDS = {
           MAXNOTES => {:type => ::Thrift::Types::I32, :name => 'maxNotes', :optional => true},
           MAXNOTEBOOKS => {:type => ::Thrift::Types::I32, :name => 'maxNotebooks', :optional => true},
           MAXTAGS => {:type => ::Thrift::Types::I32, :name => 'maxTags', :optional => true},
           WRITABLENOTEBOOKSONLY => {:type => ::Thrift::Types::BOOL, :name => 'writableNotebooksOnly', :optional => true},
-          INCLUDECONTAININGNOTEBOOKS => {:type => ::Thrift::Types::BOOL, :name => 'includeContainingNotebooks', :optional => true}
+          INCLUDECONTAININGNOTEBOOKS => {:type => ::Thrift::Types::BOOL, :name => 'includeContainingNotebooks', :optional => true},
+          INCLUDEDEBUGINFO => {:type => ::Thrift::Types::BOOL, :name => 'includeDebugInfo', :optional => true},
+          MAXEXPERTS => {:type => ::Thrift::Types::I32, :name => 'maxExperts', :optional => true},
+          MAXRELATEDCONTENT => {:type => ::Thrift::Types::I32, :name => 'maxRelatedContent', :optional => true},
+          RELATEDCONTENTTYPES => {:type => ::Thrift::Types::SET, :name => 'relatedContentTypes', :element => {:type => ::Thrift::Types::I32, :enum_class => ::Evernote::EDAM::Type::RelatedContentType}, :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # The result of a call to updateNoteIfUsnMatches, which optionally updates a note
+# based on the current value of the note's update sequence number on the service.
+# 
+# <dl>
+# <dt>note</dt>
+# <dd>Either the current state of the note if <tt>updated</tt> is false or the
+# result of updating the note as would be done via the <tt>updateNote</tt> method.
+# If the note was not updated, you will receive a Note that does not include note
+# content, resources data, resources recognition data, or resources alternate data.
+# You can check for updates to these large objects by checking the Data.bodyHash
+# values and downloading accordingly.</dd>
+# 
+# <dt>updated</dt>
+# <dd>Whether or not the note was updated by the operation.</dd>
+# </dl>
+      class UpdateNoteIfUsnMatchesResult
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        NOTE = 1
+        UPDATED = 2
+
+        FIELDS = {
+          NOTE => {:type => ::Thrift::Types::STRUCT, :name => 'note', :class => ::Evernote::EDAM::Type::Note, :optional => true},
+          UPDATED => {:type => ::Thrift::Types::BOOL, :name => 'updated', :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      class ShareRelationshipRestrictions
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        NOSETREADONLY = 1
+        NOSETREADPLUSACTIVITY = 2
+        NOSETMODIFY = 3
+        NOSETFULLACCESS = 4
+
+        FIELDS = {
+          NOSETREADONLY => {:type => ::Thrift::Types::BOOL, :name => 'noSetReadOnly', :optional => true},
+          NOSETREADPLUSACTIVITY => {:type => ::Thrift::Types::BOOL, :name => 'noSetReadPlusActivity', :optional => true},
+          NOSETMODIFY => {:type => ::Thrift::Types::BOOL, :name => 'noSetModify', :optional => true},
+          NOSETFULLACCESS => {:type => ::Thrift::Types::BOOL, :name => 'noSetFullAccess', :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # Describes an invitation to a person to use their Evernote
+# credentials to become a member of a notebook.
+# 
+# <dl>
+# <dt>displayName</dt>
+# <dd>The string that clients should show to users to represent this
+# invitation.</dd>
+# 
+# <dt>recipientUserIdentity</dt>
+# <dd>Identifies the recipient of the invitation. The user identity
+# type can be either EMAIL or IDENTITYID, depending on whether the
+# invitation was created using the classic notebook sharing APIs or
+# the new identity-based notebook sharing APIs.
+# </dd>
+# 
+# <dt>privilege</dt>
+# <dd>The privilege level at which the member will be joined, if it
+# turns out that the member is not already joined at a higher level.
+# Note that the <tt>identity</tt> field may not uniquely identify an
+# Evernote User ID, and so we won't know until the invitation is
+# redeemed whether or not the recipient already has privilege.</dd>
+# 
+# <dt>allowPreview</dt>
+# <dd>Before redeeming the invitation, the user may be able to
+# preview the notebook without an Evernote account if this field is
+# <tt>true</tt>.</dd>
+# 
+# <dt>sharerUserId</dt>
+# <dd>The user id of the user who most recently shared this notebook
+# to this identity. This field is used by the service to convey information
+# to the user, so clients should treat it as read-only.</dd>
+# </dl>
+      class InvitationShareRelationship
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        DISPLAYNAME = 1
+        RECIPIENTUSERIDENTITY = 2
+        PRIVILEGE = 3
+        ALLOWPREVIEW = 4
+        SHARERUSERID = 5
+
+        FIELDS = {
+          DISPLAYNAME => {:type => ::Thrift::Types::STRING, :name => 'displayName', :optional => true},
+          RECIPIENTUSERIDENTITY => {:type => ::Thrift::Types::STRUCT, :name => 'recipientUserIdentity', :class => ::Evernote::EDAM::Type::UserIdentity, :optional => true},
+          PRIVILEGE => {:type => ::Thrift::Types::I32, :name => 'privilege', :optional => true, :enum_class => ::Evernote::EDAM::NoteStore::ShareRelationshipPrivilegeLevel},
+          ALLOWPREVIEW => {:type => ::Thrift::Types::BOOL, :name => 'allowPreview', :optional => true},
+          SHARERUSERID => {:type => ::Thrift::Types::I32, :name => 'sharerUserId', :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+          unless @privilege.nil? || ::Evernote::EDAM::NoteStore::ShareRelationshipPrivilegeLevel::VALID_VALUES.include?(@privilege)
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field privilege!')
+          end
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # Describes the association between a Notebook and an Evernote User who is
+# a member of that notebook.
+# 
+# <dl>
+# <dt>displayName</dt>
+# <dd>The string that clients should show to users to represent this
+# member.</dd>
+# 
+# <dt>recipientUserId</dt>
+# <dd>The Evernote User ID of the recipient of this notebook share.
+# </dd>
+# 
+# <dt>bestPrivilege</dt>
+# <dd>The privilege at which the member can access the notebook,
+# which is the best privilege granted either individually or to a
+# group to which a member belongs, such as a business.  This field is
+# used by the service to convey information to the user, so clients
+# should treat it as read-only.</dd>
+# 
+# <dt>individualPrivilege</dt>
+# <dd>The individually granted privilege for the member, which does
+# not take GROUP privileges into account.  This value may be unset if
+# only a group-assigned privilege has been granted to the member.
+# This value can be managed by others with sufficient rights using
+# the manageNotebookShares method.  The valid values that clients
+# should present to users for selection are given via the the
+# 'restrictions' field.</dd>
+# 
+# <dt>restrictions</dt>
+# <dd>The restrictions on which privileges may be individually
+# assigned to the recipient of this share relationship.</dd>
+# 
+# <dt>sharerUserId</dt>
+# <dd>The user id of the user who most recently shared the notebook
+# to this user. This field is currently unset for a MemberShareRelationship
+# created by joining a notebook that has been published to the business
+# (MemberShareRelationships where the individual privilege is unset).
+# This field is used by the service to convey information to the user, so
+# clients should treat it as read-only.
+# </dd>
+# </dl>
+      class MemberShareRelationship
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        DISPLAYNAME = 1
+        RECIPIENTUSERID = 2
+        BESTPRIVILEGE = 3
+        INDIVIDUALPRIVILEGE = 4
+        RESTRICTIONS = 5
+        SHARERUSERID = 6
+
+        FIELDS = {
+          DISPLAYNAME => {:type => ::Thrift::Types::STRING, :name => 'displayName', :optional => true},
+          RECIPIENTUSERID => {:type => ::Thrift::Types::I32, :name => 'recipientUserId', :optional => true},
+          BESTPRIVILEGE => {:type => ::Thrift::Types::I32, :name => 'bestPrivilege', :optional => true, :enum_class => ::Evernote::EDAM::NoteStore::ShareRelationshipPrivilegeLevel},
+          INDIVIDUALPRIVILEGE => {:type => ::Thrift::Types::I32, :name => 'individualPrivilege', :optional => true, :enum_class => ::Evernote::EDAM::NoteStore::ShareRelationshipPrivilegeLevel},
+          RESTRICTIONS => {:type => ::Thrift::Types::STRUCT, :name => 'restrictions', :class => ::Evernote::EDAM::NoteStore::ShareRelationshipRestrictions, :optional => true},
+          SHARERUSERID => {:type => ::Thrift::Types::I32, :name => 'sharerUserId', :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+          unless @bestPrivilege.nil? || ::Evernote::EDAM::NoteStore::ShareRelationshipPrivilegeLevel::VALID_VALUES.include?(@bestPrivilege)
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field bestPrivilege!')
+          end
+          unless @individualPrivilege.nil? || ::Evernote::EDAM::NoteStore::ShareRelationshipPrivilegeLevel::VALID_VALUES.include?(@individualPrivilege)
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field individualPrivilege!')
+          end
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # Captures a collection of share relationships for a notebook, for
+# example, as returned by the getNotebookShares method.  The share
+# relationships fall into two broad categories: members, and
+# invitations that can be used to become members.
+# 
+# <dl>
+# <dt>invitations</dt>
+# <dd>A list of open invitations that can be redeemed into
+# memberships to the notebook.</dd>
+# 
+# <dt>memberships</dt>
+# <dd>A list of memberships of the notebook.  A member is identified
+# by their Evernote UserID and has rights to access the
+# notebook.</dd>
+# 
+# <dt>invitationRestrictions</dt>
+# <dd>The restrictions on what privileges may be granted to invitees
+# to this notebook. These restrictions may be specific to the calling
+# user or to the notebook itself. They represent the
+# union of all possible invite cases, so it is possible that once the
+# recipient of the invitation has been identified by the service, such
+# as by a business auto-join, the actual assigned privilege may change.
+# </dd>
+# </dl>
+      class ShareRelationships
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        INVITATIONS = 1
+        MEMBERSHIPS = 2
+        INVITATIONRESTRICTIONS = 3
+
+        FIELDS = {
+          INVITATIONS => {:type => ::Thrift::Types::LIST, :name => 'invitations', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::NoteStore::InvitationShareRelationship}, :optional => true},
+          MEMBERSHIPS => {:type => ::Thrift::Types::LIST, :name => 'memberships', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::NoteStore::MemberShareRelationship}, :optional => true},
+          INVITATIONRESTRICTIONS => {:type => ::Thrift::Types::STRUCT, :name => 'invitationRestrictions', :class => ::Evernote::EDAM::NoteStore::ShareRelationshipRestrictions, :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # A structure that captures parameters used by clients to manage the
+# shares for a given notebook via the manageNotebookShares method.
+# 
+# <dl>
+# <dt>notebookGuid</dt>
+# <dd>The GUID of the notebook whose shares are being managed.</dd>
+# 
+# <dt>inviteMessage</dt>
+# <dd>If the service sends a message to invitees, this parameter will
+# be used to form the actual message that is sent.</dd>
+# 
+# <dt>membershipsToUpdate</dt>
+# <dd>The list of existing memberships to update.  This field is not
+# intended to be the full set of memberships for the notebook and
+# should only include those already-existing memberships that you
+# actually want to change.  If you want to remove shares, see the
+# unshares fields.  If you want to create a membership,
+# i.e. auto-join a business user, you can do this via the
+# invitationsToCreateOrUpdate field using an Evernote UserID of a
+# fellow business member (the created invitation is automatically
+# joined by the service, so the client is creating an
+# invitation, not a membership).</dd>
+# 
+# <dt>invitationsToCreateOrUpdate</dt>
+# <dd>The list of invitations to update, as matched by the identity
+# field of the InvitationShareRelationship instances, or to create if
+# an existing invitation does not exist.  This field is not intended
+# to be the full set of invitations on the notebook and should only
+# include those invitations that you wish to create or update.  Note
+# that your invitation could convert into a membership via a
+# service-supported auto-join operation.  This happens, for example,
+# when you use an invitation with an Evernote UserID type for a
+# recipient who is a member of the business to which the notebook
+# belongs.  Note that to discover the user IDs for business members,
+# the sharer must also be part of the business.</dd>
+# 
+# <dt>unshares</dt>
+# <dd>The list of share relationships to expunge from the service.
+# If the user identity is for an Evernote UserID, then memberships will
+# be removed. If it's an e-mail, then e-mail based shared notebook
+# invitations will be removed. If it's for an Identity ID, then
+# any invitations that match the identity (by identity ID or user ID or
+# e-mail for legacy invitations) will be removed.</dd>
+# </dl>
+      class ManageNotebookSharesParameters
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        NOTEBOOKGUID = 1
+        INVITEMESSAGE = 2
+        MEMBERSHIPSTOUPDATE = 3
+        INVITATIONSTOCREATEORUPDATE = 4
+        UNSHARES = 5
+
+        FIELDS = {
+          NOTEBOOKGUID => {:type => ::Thrift::Types::STRING, :name => 'notebookGuid', :optional => true},
+          INVITEMESSAGE => {:type => ::Thrift::Types::STRING, :name => 'inviteMessage', :optional => true},
+          MEMBERSHIPSTOUPDATE => {:type => ::Thrift::Types::LIST, :name => 'membershipsToUpdate', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::NoteStore::MemberShareRelationship}, :optional => true},
+          INVITATIONSTOCREATEORUPDATE => {:type => ::Thrift::Types::LIST, :name => 'invitationsToCreateOrUpdate', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::NoteStore::InvitationShareRelationship}, :optional => true},
+          UNSHARES => {:type => ::Thrift::Types::LIST, :name => 'unshares', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::Type::UserIdentity}, :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # A structure to capture certain errors that occurred during a call
+# to manageNotebookShares.  That method can be run best-effort,
+# meaning that some change requests can be applied while others fail.
+# Note that some errors such as system errors will still fail the
+# entire transaction regardless of running best effort.  When some
+# change requests do not succeed, the error conditions are captured
+# in instances of this class, captured by the identity of the share
+# relationship and one of the exception fields.
+# 
+# <dl>
+# <dt>userIdentity</dt>
+# <dd>The identity of the share relationship whose update encountered
+# an error.</dd>
+# 
+# <dt>userException</dt>
+# <dd>If the error is represented as an EDAMUserException that would
+# have otherwise been thrown without best-effort execution.  Only one
+# exception field will be set.</dd>
+# 
+# <dt>notFoundException</dt>
+# <dd>If the error is represented as an EDAMNotFoundException that would
+# have otherwise been thrown without best-effort execution.  Only one
+# exception field will be set.</dd>
+# </dl>
+      class ManageNotebookSharesError
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        USERIDENTITY = 1
+        USEREXCEPTION = 2
+        NOTFOUNDEXCEPTION = 3
+
+        FIELDS = {
+          USERIDENTITY => {:type => ::Thrift::Types::STRUCT, :name => 'userIdentity', :class => ::Evernote::EDAM::Type::UserIdentity, :optional => true},
+          USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => ::Evernote::EDAM::Error::EDAMUserException, :optional => true},
+          NOTFOUNDEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'notFoundException', :class => ::Evernote::EDAM::Error::EDAMNotFoundException, :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # The return value of a call to the manageNotebookShares method.
+# 
+# <dl>
+# <dt>errors</dt>
+# <dd>If the method completed without throwing exceptions, some errors
+# might still have occurred, and in that case, this field will contain
+# the list of those errors the occurred.
+# </dd>
+# </dl>
+      class ManageNotebookSharesResult
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        ERRORS = 1
+
+        FIELDS = {
+          ERRORS => {:type => ::Thrift::Types::LIST, :name => 'errors', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::NoteStore::ManageNotebookSharesError}, :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # A structure used to share a note with one or more recipients at a given privilege.
+# 
+# <dl>
+#   <dt>noteGuid</dt>
+#   <dd>The GUID of the note.</dd>
+# 
+#   <dt>recipientThreadId</dt>
+#   <dd>The recipients of the note share specified as a messaging thread ID. If you
+#       have an existing messaging thread to share the note with, specify its ID
+#       here instead of recipientContacts in order to properly support defunct
+#       identities. The sharer must be a participant of the thread. Either this
+#       field or recipientContacts must be set.</dd>
+# 
+#   <dt>recipientContacts</dt>
+#   <dd>The recipients of the note share specified as a list of contacts. This should
+#       only be set if the sharing takes place before the thread is created. Use
+#       recipientThreadId instead when sharing with an existing thread. Either this
+#       field or recipientThreadId must be set.</dd>
+# 
+#   <dt>privilege</dt>
+#   <dd>The privilege level to be granted.</dd>
+# </dl>
+      class SharedNoteTemplate
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        NOTEGUID = 1
+        RECIPIENTTHREADID = 4
+        RECIPIENTCONTACTS = 2
+        PRIVILEGE = 3
+
+        FIELDS = {
+          NOTEGUID => {:type => ::Thrift::Types::STRING, :name => 'noteGuid', :optional => true},
+          RECIPIENTTHREADID => {:type => ::Thrift::Types::I64, :name => 'recipientThreadId', :optional => true},
+          RECIPIENTCONTACTS => {:type => ::Thrift::Types::LIST, :name => 'recipientContacts', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::Type::Contact}, :optional => true},
+          PRIVILEGE => {:type => ::Thrift::Types::I32, :name => 'privilege', :optional => true, :enum_class => ::Evernote::EDAM::Type::SharedNotePrivilegeLevel}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+          unless @privilege.nil? || ::Evernote::EDAM::Type::SharedNotePrivilegeLevel::VALID_VALUES.include?(@privilege)
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field privilege!')
+          end
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # A structure used to share a notebook with one or more recipients at a given privilege.
+# 
+# <dl>
+#   <dt>notebookGuid</dt>
+#   <dd>The GUID of the notebook.</dd>
+# 
+#   <dt>recipientThreadId</dt>
+#   <dd>The recipients of the notebook share specified as a messaging thread ID. If you
+#       have an existing messaging thread to share the note with, specify its ID
+#       here instead of recipientContacts in order to properly support defunct
+#       identities. The sharer must be a participant of the thread. Either this field
+#       or recipientContacts must be set.</dd>
+# 
+#   <dt>recipientContacts</dt>
+#   <dd>The recipients of the notebook share specified as a list of contacts. This should
+#       only be set if the sharing takes place before the thread is created. Use
+#       recipientThreadId instead when sharing with an existing thread. Either this
+#       field or recipientThreadId must be set.</dd>
+# 
+#   <dt>privilege</dt>
+#   <dd>The privilege level to be granted.</dd>
+# </dl>
+      class NotebookShareTemplate
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        NOTEBOOKGUID = 1
+        RECIPIENTTHREADID = 4
+        RECIPIENTCONTACTS = 2
+        PRIVILEGE = 3
+
+        FIELDS = {
+          NOTEBOOKGUID => {:type => ::Thrift::Types::STRING, :name => 'notebookGuid', :optional => true},
+          RECIPIENTTHREADID => {:type => ::Thrift::Types::I64, :name => 'recipientThreadId', :optional => true},
+          RECIPIENTCONTACTS => {:type => ::Thrift::Types::LIST, :name => 'recipientContacts', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::Type::Contact}, :optional => true},
+          PRIVILEGE => {:type => ::Thrift::Types::I32, :name => 'privilege', :optional => true, :enum_class => ::Evernote::EDAM::Type::SharedNotebookPrivilegeLevel}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+          unless @privilege.nil? || ::Evernote::EDAM::Type::SharedNotebookPrivilegeLevel::VALID_VALUES.include?(@privilege)
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field privilege!')
+          end
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # A structure containing the results of a call to createOrUpdateNotebookShares.
+# 
+# <dl>
+#   <dt>updateSequenceNum</dt>
+#   <dd>The USN of the notebook after the call.</dd>
+# 
+#   <dt>matchingShares</dt>
+#   <dd>A list of SharedNotebook records that match the desired recipients. These
+#       records may have been either created or updated by the call to
+#       createOrUpdateNotebookShares, or they may have been at the desired privilege
+#       privilege level prior to the call.</dd>
+# </dl>
+      class CreateOrUpdateNotebookSharesResult
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        UPDATESEQUENCENUM = 1
+        MATCHINGSHARES = 2
+
+        FIELDS = {
+          UPDATESEQUENCENUM => {:type => ::Thrift::Types::I32, :name => 'updateSequenceNum', :optional => true},
+          MATCHINGSHARES => {:type => ::Thrift::Types::LIST, :name => 'matchingShares', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::Type::SharedNotebook}, :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # This structure is used by the service to communicate to clients, via
+# getNoteShareRelationships, which privilege levels are assignable to the
+# target of a note share relationship.
+# 
+# <dl>
+# <dt>noSetReadNote</dt>
+# <dd>This value is true if the user is not allowed to set the privilege
+# level to SharedNotePrivilegeLevel.READ_NOTE.</dd>
+# 
+# <dt>noSetModifyNote</dt>
+# <dd>This value is true if the user is not allowed to set the privilege
+# level to SharedNotePrivilegeLevel.MODIFY_NOTE.</dd>
+# 
+# <dt>noSetFullAccess</dt>
+# <dd>This value is true if the user is not allowed to set the
+# privilege level to SharedNotePrivilegeLevel.FULL_ACCESS.</dd>
+# </dl>
+      class NoteShareRelationshipRestrictions
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        NOSETREADNOTE = 1
+        NOSETMODIFYNOTE = 2
+        NOSETFULLACCESS = 3
+
+        FIELDS = {
+          NOSETREADNOTE => {:type => ::Thrift::Types::BOOL, :name => 'noSetReadNote', :optional => true},
+          NOSETMODIFYNOTE => {:type => ::Thrift::Types::BOOL, :name => 'noSetModifyNote', :optional => true},
+          NOSETFULLACCESS => {:type => ::Thrift::Types::BOOL, :name => 'noSetFullAccess', :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # Describes the association between a Note and an Evernote User who is
+# a member of that note.
+# 
+# <dl>
+# <dt>displayName</dt>
+# <dd>The string that clients should show to users to represent this
+# member.</dd>
+# 
+# <dt>recipientUserId</dt>
+# <dd>The Evernote UserID of the user who is a member to the note.</dd>
+# 
+# <dt>privilege</dt>
+# <dd>The privilege at which the member can access the note,
+# which is the best privilege granted to the user across all of their
+# individual shares for this note. This field is used by the service
+# to convey information to the user, so clients should treat it as
+# read-only.</dd>
+# 
+# <dt>restrictions</dt>
+# <dd>The restrictions on which privileges may be individually
+# assigned to the recipient of this share relationship. This field
+# is used by the service to convey information to the user, so
+# clients should treat it as read-only.</dd>
+# 
+# <dt>sharerUserId</dt>
+# <dd>The user id of the user who most recently shared the note with
+# this user. This field is used by the service to convey information
+# to the user, so clients should treat it as read-only.</dd>
+# </dl>
+      class NoteMemberShareRelationship
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        DISPLAYNAME = 1
+        RECIPIENTUSERID = 2
+        PRIVILEGE = 3
+        RESTRICTIONS = 4
+        SHARERUSERID = 5
+
+        FIELDS = {
+          DISPLAYNAME => {:type => ::Thrift::Types::STRING, :name => 'displayName', :optional => true},
+          RECIPIENTUSERID => {:type => ::Thrift::Types::I32, :name => 'recipientUserId', :optional => true},
+          PRIVILEGE => {:type => ::Thrift::Types::I32, :name => 'privilege', :optional => true, :enum_class => ::Evernote::EDAM::Type::SharedNotePrivilegeLevel},
+          RESTRICTIONS => {:type => ::Thrift::Types::STRUCT, :name => 'restrictions', :class => ::Evernote::EDAM::NoteStore::NoteShareRelationshipRestrictions, :optional => true},
+          SHARERUSERID => {:type => ::Thrift::Types::I32, :name => 'sharerUserId', :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+          unless @privilege.nil? || ::Evernote::EDAM::Type::SharedNotePrivilegeLevel::VALID_VALUES.include?(@privilege)
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field privilege!')
+          end
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # Describes an invitation to a person to use their Evernote credentials
+# to gain access to a note belonging to another user.
+# 
+# <dl>
+# <dt>displayName</dt>
+# <dd>The string that clients should show to users to represent this
+# invitation.</dd>
+# 
+# <dt>recipientIdentityId</dt>
+# <dd>Identifies the identity of the invitation recipient. Once the
+# identity has been claimed by an Evernote user and they have accessed
+# the note at least once, the invitation will be used up and will no
+# longer be returned by the service to clients. Instead, that recipient
+# will be included in the list of NoteMemberShareRelationships.</dd>
+# 
+# <dt>privilege</dt>
+# <dd>The privilege level that the recipient will be granted when they
+# accept this invitation. If the user already has a higher privilege to
+# access this note then this will not affect the recipient's privileges.</dd>
+# 
+# <dt>sharerUserId</dt>
+# <dd>The user id of the user who most recently shared this note to this
+# recipient. This field is used by the service to convey information
+# to the user, so clients should treat it as read-only.</dd>
+      class NoteInvitationShareRelationship
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        DISPLAYNAME = 1
+        RECIPIENTIDENTITYID = 2
+        PRIVILEGE = 3
+        SHARERUSERID = 5
+
+        FIELDS = {
+          DISPLAYNAME => {:type => ::Thrift::Types::STRING, :name => 'displayName', :optional => true},
+          RECIPIENTIDENTITYID => {:type => ::Thrift::Types::I64, :name => 'recipientIdentityId', :optional => true},
+          PRIVILEGE => {:type => ::Thrift::Types::I32, :name => 'privilege', :optional => true, :enum_class => ::Evernote::EDAM::Type::SharedNotePrivilegeLevel},
+          SHARERUSERID => {:type => ::Thrift::Types::I32, :name => 'sharerUserId', :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+          unless @privilege.nil? || ::Evernote::EDAM::Type::SharedNotePrivilegeLevel::VALID_VALUES.include?(@privilege)
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field privilege!')
+          end
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # Captures a collection of share relationships for a single note,
+# for example, as returned by the getNoteShares method. The share
+# relationships fall into two broad categories: members, and
+# invitations that can be used to become members.
+# 
+# <dl>
+# <dt>invitations</dt>
+# <dd>A list of open invitations that can be redeemed into
+# memberships to the note.</dd>
+# 
+# <dt>memberships</dt>
+# <dd>A list of memberships of the noteb. A member is identified
+# by their Evernote UserID and has rights to access the
+# note.</dd>
+# 
+# <dt>restrictions</dt>
+# <dd>The restrictions on which privileges may be assigned to the recipient
+# of an open invitation. These restrictions only apply to invitations;
+# restrictions on memberships are specified on the NoteMemberShareRelationship.
+# This field is used by the service to convey information to the user, so
+# clients should treat it as read-only.</dd>
+# 
+# </dl>
+      class NoteShareRelationships
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        INVITATIONS = 1
+        MEMBERSHIPS = 2
+        INVITATIONRESTRICTIONS = 3
+
+        FIELDS = {
+          INVITATIONS => {:type => ::Thrift::Types::LIST, :name => 'invitations', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::NoteStore::NoteInvitationShareRelationship}, :optional => true},
+          MEMBERSHIPS => {:type => ::Thrift::Types::LIST, :name => 'memberships', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::NoteStore::NoteMemberShareRelationship}, :optional => true},
+          INVITATIONRESTRICTIONS => {:type => ::Thrift::Types::STRUCT, :name => 'invitationRestrictions', :class => ::Evernote::EDAM::NoteStore::NoteShareRelationshipRestrictions, :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # Captures parameters used by clients to manage the shares for a given
+# note via the manageNoteShares function. This is used only to manage
+# the existing memberships and invitations for a note. To invite a new
+# recipient, use NoteStore.createOrUpdateSharedNotes.
+# 
+# The only field of an existing membership or invitation that can be
+# updated by this function is the share privilege.
+# 
+# <dl>
+#   <dt>noteGuid</dt>
+#   <dd>The GUID of the note whose shares are being managed.</dd>
+# 
+#   <dt>membershipsToUpdate</dt>
+#   <dd>A list of existing memberships to update. This field is not
+#     meant to be the full set of memberships for the note. Clients
+#     should only include those existing memberships that they wish
+#     to modify. To remove an existing membership, see the unshares
+#     field.</dd>
+# 
+#   <dt>invitationsToUpdate</dt>
+#   <dd>The list of outstanding invitations to update, as matched by the
+#     identity field of the NoteInvitationShareRelatioship instances.
+#     This field is not meant to be the full set of invitations for the
+#     note. Clients should only include those existing invitations that
+#     they wish to modify.</dd>
+# 
+#   <dt>membershipsToUnshare</dt>
+#   <dd>A list of existing memberships to expunge from the service.</dd>
+# 
+#   <dt>invitationsToUnshare</dt>
+#   <dd>A list of outstanding invitations to expunge from the service.</dd>
+# </dl>
+      class ManageNoteSharesParameters
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        NOTEGUID = 1
+        MEMBERSHIPSTOUPDATE = 2
+        INVITATIONSTOUPDATE = 3
+        MEMBERSHIPSTOUNSHARE = 4
+        INVITATIONSTOUNSHARE = 5
+
+        FIELDS = {
+          NOTEGUID => {:type => ::Thrift::Types::STRING, :name => 'noteGuid', :optional => true},
+          MEMBERSHIPSTOUPDATE => {:type => ::Thrift::Types::LIST, :name => 'membershipsToUpdate', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::NoteStore::NoteMemberShareRelationship}, :optional => true},
+          INVITATIONSTOUPDATE => {:type => ::Thrift::Types::LIST, :name => 'invitationsToUpdate', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::NoteStore::NoteInvitationShareRelationship}, :optional => true},
+          MEMBERSHIPSTOUNSHARE => {:type => ::Thrift::Types::LIST, :name => 'membershipsToUnshare', :element => {:type => ::Thrift::Types::I32}, :optional => true},
+          INVITATIONSTOUNSHARE => {:type => ::Thrift::Types::LIST, :name => 'invitationsToUnshare', :element => {:type => ::Thrift::Types::I64}, :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # Captures errors that occur during a call to manageNoteShares. That
+# function can be run best-effort, meaning that some change requests can
+# be applied while others fail. Note that some errors such as system
+# exceptions may still cause the entire call to fail.
+# 
+# Only one of the two ID fields will be set on a given error.
+# 
+# Only one of the two exception fields will be set on a given error.
+# 
+# <dl>
+#   <dt>identityID</dt>
+#   <dd>The identity ID of an outstanding invitation that was not updated
+#     due to the error.</dd>
+# 
+#   <dt>userID</dt>
+#   <dd>The user ID of an existing membership that was not updated due
+#     to the error.</dd>
+# 
+#   <dt>userException</dt>
+#   <dd>If the error is represented as an EDAMUserException that would
+#     have otherwise been thrown without best-effort execution.</dd>
+# 
+#   <dt>notFoundException</dt>
+#   <dd>If the error is represented as an EDAMNotFoundException that
+#     would have otherwise been thrown without best-effort execution.
+#     The identifier field of the exception will be either "Identity.id"
+#     or "User.id", indicating that no existing share could be found for
+#     the specified recipient.</dd>
+# </dl>
+      class ManageNoteSharesError
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        IDENTITYID = 1
+        USERID = 2
+        USEREXCEPTION = 3
+        NOTFOUNDEXCEPTION = 4
+
+        FIELDS = {
+          IDENTITYID => {:type => ::Thrift::Types::I64, :name => 'identityID', :optional => true},
+          USERID => {:type => ::Thrift::Types::I32, :name => 'userID', :optional => true},
+          USEREXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'userException', :class => ::Evernote::EDAM::Error::EDAMUserException, :optional => true},
+          NOTFOUNDEXCEPTION => {:type => ::Thrift::Types::STRUCT, :name => 'notFoundException', :class => ::Evernote::EDAM::Error::EDAMNotFoundException, :optional => true}
+        }
+
+        def struct_fields; FIELDS; end
+
+        def validate
+        end
+
+        ::Thrift::Struct.generate_accessors self
+      end
+
+      # The return value of a call to the manageNoteShares function.
+# 
+# <dl>
+#   <dt>errors</dt>
+#   <dd>If the call succeeded without throwing an exception, some errors
+#     might still have occurred. In that case, this field will contain the
+#     list of errors.</dd>
+# </dl>
+      class ManageNoteSharesResult
+        include ::Thrift::Struct, ::Thrift::Struct_Union
+        ERRORS = 1
+
+        FIELDS = {
+          ERRORS => {:type => ::Thrift::Types::LIST, :name => 'errors', :element => {:type => ::Thrift::Types::STRUCT, :class => ::Evernote::EDAM::NoteStore::ManageNoteSharesError}, :optional => true}
         }
 
         def struct_fields; FIELDS; end
